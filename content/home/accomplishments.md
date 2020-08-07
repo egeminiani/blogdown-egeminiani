@@ -5,7 +5,7 @@ headless = true  # This file represents a page section.
 active = true  # Activate this widget? true/false
 weight = 50  # Order that this section will appear.
 
-title = "Accomplishments"
+title = "Accomplish&shy;ments"
 subtitle = ""
 
 # Date format
@@ -49,7 +49,7 @@ date_format = "Jan 2006"
   certificate_url = "https://coursera.org/share/cf358f75b5904466204ab3d56600e0e2"
   date_start = "2020-07-25"
   date_end = ""
-  description = "Big Data, Mongodb, Splunk, Apache Spark."
+  description = "Big Data, MongoDB, Splunk, Apache Spark."
 
 
 [[item]]
@@ -71,7 +71,7 @@ date_format = "Jan 2006"
   certificate_url = "https://coursera.org/share/da9e8df0cfc62e5d16135bef5ceeaef4"
   date_start = "2020-07-22"
   date_end = ""
-  description = "Big Data, Apache Hadoop, Mapreduce, Cloudera."
+  description = "Big Data, Apache Hadoop, MapReduce, Cloudera."
 
 
 [[item]]

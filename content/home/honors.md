@@ -27,7 +27,7 @@ date_format = "Jan 2006"
   certificate_url = ""
   date_start = "2019-10-01"
   date_end = ""
-  description = "One-year fellowship funded by GRADUA (GRaduates Advancement and Development of University capacities in Albania)"
+  description = "One-year fellowship funded by GRADUA (_GRaduates Advancement and Development of University capacities in Albania_)."
   
 
 [[item]]
@@ -71,7 +71,7 @@ date_format = "Jan 2006"
   certificate_url = ""
   date_start = "2016-10-01"
   date_end = ""
-  description = "Scholarship for the PhD in Statistics at the University of Bologna."
+  description = "Scholarship for the PhD program in Statistics at the University of Bologna."
 
 
 [[item]]
@@ -93,7 +93,7 @@ date_format = "Jan 2006"
   certificate_url = ""
   date_start = "2015-10-01"
   date_end = ""
-  description = "Scholarship for research periods abroad aimed at the preparation of the master thesis at the Faculty of Psychology and Educational Sciences, Katholieke Universiteit Leuven, Leuven."
+  description = "Scholarship for research periods abroad aimed at the preparation of the Master's thesis at the Faculty of Psychology and Educational Sciences, Katholieke Universiteit Leuven, Leuven."
 
 
 [[item]]
@@ -104,6 +104,6 @@ date_format = "Jan 2006"
   certificate_url = ""
   date_start = "2013-07-01"
   date_end = ""
-  description = "Study scholarship 2013/14 for research periods abroad aimed at the abroad preparation of the Bachelor thesis at the Department of Mathematics, University of Glasgow, Glasgow."
+  description = "Scholarship for study periods abroad aimed at the abroad preparation of the Bachelor thesis at the Department of Mathematics, University of Glasgow, Glasgow."
 
 +++

@@ -44,7 +44,7 @@ date_format = "Jan 2006"
   location = "Leuven, Belgium"
   date_start = "2016-02-01"
   date_end = "2016-05-30"
-  description = """ Preparation of the Master’s thesis project """
+  description = """ Preparation of the Master’s thesis. """
 
 [[experience]]
   title = "Erasmus student"
@@ -53,7 +53,7 @@ date_format = "Jan 2006"
   location = "Glasgow, UK"
   date_start = "2013-09-01"
   date_end = "2014-05-30"
-  description = """ Fourth-year attendance of the Bachelor in Statistical Sciences, preparation of the Bachelor project and graduation. """
+  description = """ Fourth-year attendance of the Bachelor in Statistical Sciences, preparation of the Bachelor thesis and graduation. """
 
 
 +++
