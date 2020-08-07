@@ -47,6 +47,4 @@ superuser: true
 title: Elena Geminiani
 ---
 
-I am a postdoc in Statistics at the University of Bologna. I am enthusiastic about doing anything at the intersection between statistical methodology and computational science. <br> 
-My research interests include multivariate analysis, dimension reduction, text analysis, and optimization. I have spent research periods abroad at the London School of Economics, University College London, KU Leuven, and University of Glasgow (double BSc degree). <br>
-I am a teaching tutor in three undergraduate and postgraduate courses.
+I am a postdoc in Statistics at the University of Bologna. I am enthusiastic about doing anything at the intersection between statistical methodology and computational science. My research interests include multivariate analysis, dimension reduction, text analysis, and optimization. I have spent research periods abroad at the London School of Economics, University College London, KU Leuven, and University of Glasgow (double BSc degree). I am a teaching tutor in three undergraduate and postgraduate courses.
