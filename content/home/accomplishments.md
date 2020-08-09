@@ -31,7 +31,7 @@ date_format = "Jan 2006"
 
 
 [[item]]
-  organization = "Coursera"
+  organization = "Coursera • UC San Diego"
   organization_url = "https://www.coursera.org"
   title = "Machine Learning with Big Data"
   url = "https://www.coursera.org/learn/big-data-machine-learning"
@@ -42,7 +42,7 @@ date_format = "Jan 2006"
 
 
 [[item]]
-  organization = "Coursera"
+  organization = "Coursera • UC San Diego"
   organization_url = "https://www.coursera.org"
   title = "Big Data Integration and Processing"
   url = "https://www.coursera.org/learn/big-data-integration-processing"
@@ -53,7 +53,7 @@ date_format = "Jan 2006"
 
 
 [[item]]
-  organization = "Coursera"
+  organization = "Coursera • UC San Diego"
   organization_url = "https://www.coursera.org"
   title = "Big Data Modeling and Management Systems"
   url = "https://www.coursera.org/learn/big-data-management"
@@ -64,7 +64,7 @@ date_format = "Jan 2006"
 
 
 [[item]]
-  organization = "Coursera"
+  organization = "Coursera • UC San Diego"
   organization_url = "https://www.coursera.org"
   title = "Introduction to Big Data"
   url = "https://www.coursera.org/learn/big-data-introduction"
@@ -75,7 +75,7 @@ date_format = "Jan 2006"
 
 
 [[item]]
-  organization = "Coursera"
+  organization = "Coursera • University of California, Davis"
   organization_url = "https://www.coursera.org"
   title = "Essential Design Principles for Tableau"
   url = "https://www.coursera.org/learn/dataviz-design"
@@ -86,18 +86,7 @@ date_format = "Jan 2006"
 
 
 [[item]]
-  organization = "Coursera"
-  organization_url = "https://www.coursera.org"
-  title = "SQL for Data Science"
-  url = "https://www.coursera.org/learn/sql-for-data-science"
-  certificate_url = "https://coursera.org/share/ba6c84eab31a4a1f7262452b260333dd"
-  date_start = "2020-07-12"
-  date_end = ""
-  description = "Use SQL commands to filter, sort, and summarize data. Use the UNION operator. Manipulate strings, dates, & numeric data."
-  
-  
-[[item]]
-  organization = "Coursera"
+  organization = "Coursera • University of California, Davis"
   organization_url = "https://www.coursera.org"
   title = "Fundamentals of Visualization via Tableau"
   url = "https://www.coursera.org/learn/data-visualization-tableau"
@@ -105,7 +94,18 @@ date_format = "Jan 2006"
   date_start = "2020-07-18"
   date_end = ""
   description = "Navigate the Tableau Public workspace, create a visualization, connect to different data sources."
-  
+
+
+[[item]]
+  organization = "Coursera • University of California, Davis"
+  organization_url = "https://www.coursera.org"
+  title = "SQL for Data Science"
+  url = "https://www.coursera.org/learn/sql-for-data-science"
+  certificate_url = "https://coursera.org/share/ba6c84eab31a4a1f7262452b260333dd"
+  date_start = "2020-07-12"
+  date_end = ""
+  description = "Use SQL commands to filter, sort, and summarize data. Use the UNION operator. Manipulate strings, dates, & numeric data."
+
   
 [[item]]
   organization = "LinkedIn Learning"

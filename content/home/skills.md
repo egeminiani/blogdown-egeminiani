@@ -18,37 +18,37 @@ subtitle = ""
   icon = "chart-bar"
   icon_pack = "fas"
   name = "Data Science & Programming"
-  description = "R (9 years), Python (< 1 year), Matlab (< 1 year), SAS (1 year), SAS Enterprise Miner (1 year), SPSS (< 1 year)"
+  description = "R (9 years), Python (< 1 year) <br> SPSS (< 1 year), SAS (1 year) <br> SAS Enterprise Miner (1 year)"
   
 [[feature]]
   icon = "database"
   icon_pack = "fas"
-  name = "Data Bases"
-  description = "SQL (< 1 year), MongoDB (< 1 year)"
+  name = "Databases"
+  description = "SQL (< 1 year) <br> MongoDB (< 1 year)"
   
 [[feature]]
   icon = "tools"
   icon_pack = "fas"
   name = "Big Data"
-  description = "Spark (< 1 year), KNIME (< 1 year), Hadoop (< 1 year)"
+  description = "Spark (< 1 year) <br> KNIME (< 1 year) <br> Hadoop (< 1 year)"
   
 [[feature]]
   icon = "pencil-alt"
   icon_pack = "fas"
   name = "Reporting"
-  description = "R Markdown (4 years), LaTeX (6 years), beamer (6 years), Microsoft Office (10 years)"  
+  description = "R Markdown (4 years) <br> LaTeX (6 years), beamer (6 years) <br> Microsoft Office (10 years)"  
   
 [[feature]]
   icon = "palette"
   icon_pack = "fas"
   name = "Visualization"
-  description = "R (9 years), Tableau (< 1 year)"
+  description = "R (9 years) <br> Tableau (< 1 year)"
 
 [[feature]]
   icon = "undo"
   icon_pack = "fas"
   name = "Version Control"
-  description = "Git (1 year), Github (1 year)"
+  description = "Git (1 year) <br> Github (1 year)"
 
 [[feature]]
   icon = "desktop"
@@ -60,13 +60,13 @@ subtitle = ""
   icon = "sitemap"
   icon_pack = "fas"
   name = "Websites"
-  description = "blogdown (< 1 year), Hugo (< 1 year)"
+  description = "blogdown (< 1 year) <br> Hugo (< 1 year)"
   
 [[feature]]
   icon = "mountain"
   icon_pack = "fa"
   name = "Soft Skills"
-  description = "Research, Programming, Public Speaking, Technical Writing, Problem Solving, Independence, Fast learning"
+  description = "Problem Solving, Independence <br> Fast learning, Commitment <br> Time Management <br> Public Speaking, Technical Writing"
   
 # tidyverse  
 
