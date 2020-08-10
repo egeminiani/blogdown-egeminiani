@@ -39,7 +39,7 @@ footnotereturnlinkcontents = "<sup>^</sup>"
 ignoreFiles = ["\\.ipynb$", ".ipynb_checkpoints$", "\\.Rmd$", "\\.Rmarkdown$", "_files$", "_cache$"]
 
 # Enable analytics by entering your Google Analytics tracking ID
-# googleAnalytics = ""
+googleAnalytics = "UA-175015296-1"
 
 # Workaround Hugo publishing taxonomy URLs as plurals - consistently use singular across Academic.
 [permalinks]
