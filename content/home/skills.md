@@ -66,7 +66,7 @@ subtitle = ""
   icon = "mountain"
   icon_pack = "fa"
   name = "Soft Skills"
-  description = "Problem Solving, Independence <br> Fast learning, Commitment <br> Time Management <br> Public Speaking, Technical Writing"
+  description = "Problem Solving, Independence <br> Fast learning, Adaptability <br> Self-motivation, Commitment <br> Time Management <br> Public Speaking, Technical Writing"
   
 # tidyverse  
 
