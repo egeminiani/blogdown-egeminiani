@@ -1,0 +1,2991 @@
+---
+date: "2020-08-06T00:00:00Z"
+image:
+  caption: ''
+  focal_point: ''
+  preview_only: true
+summary: Classification of the operational states of a wastewater treatment plant through clustering (hierarchical, partitioning, model-based, and modal clustering), hidden Markov models, and dimension reduction methods.
+math: true
+categories:
+  - rstats
+tags:
+- anomaly detection
+- clustering
+- predictive maintenance 
+- dimension reduction
+- time series
+title: Anomaly detection of Wastewater Treatment Plant
+output:
+  rmdformats::readthedown:
+    css: custom.css
+    thumbnails: false
+    lightbox: true
+    gallery: true
+    highlight: tango
+    code_folding: show    
+editor_options: 
+  chunk_output_type: console
+featured: no
+projects: []
+---
+
+
+
+<style type="text/css">
+
+#main a {
+    color: #4ac78c;
+    text-align: left;
+}
+
+body{ /* Normal  */
+      font-size: 16px;
+      text-align: justify
+  }
+</style>
+<p>The content of this report comes from my Bachelor’s thesis project. To cite the work, please refer to Geminiani (2014) <em>A comparison of clustering methods for determining the operational states of a wastewater treatment plant</em> . [Unpublished BS.c dissertation] Alma Mater Studiorum, University of Bologna.</p>
+<div id="introduction" class="section level1">
+<h1>Introduction</h1>
+<p>Our planet is characterized by a large amount of water. However, only 3% of the available water resources are freshwater. Most of this water can be found in polar ice caps and glaciers, and only the minority comes from aquifers and surface waters (i.e., lakes, rivers, and streams). The latter represents only 0.0091% of the total water on the planet, but they are intensively processed to make them suitable for human consumption.</p>
+<center>
+<img style="width: 350px;" src="Figures/wastewater1.png">
+</center>
+<p><br></p>
+<p>Wastewater is sewage, stormwater, and water used for various purposes around the community and can be generated from both residential and non-residential sources. Unless properly treated, wastewater can harm public health and the environment. Here comes the need to have wastewater treatment plants, which are essential for preserving the ecological equilibrium of water bodies and completing the urban wastewater cycle by clearing and returning it to rivers or cities in proper conditions to be used by human beings for their daily activities.</p>
+<center>
+<img style="width: 350px;" src="Figures/wastewater2.png">
+</center>
+<p><br></p>
+<p>The treatment plant studied in this project is located in Manresa, a town of about 75000 inhabitants near Barcelona, and it is the first plant of the Recovery Plan of Catalonia. Aigües de Manresa, S. A. (a municipal corporation) provides citizens with high-quality services by managing the sewer service, the drinking water supply and the collection, the storage, the evacuation, the sanitation (sanitary control) and the treatment of the wastewater of Manresa and the surrounding areas. The nearby laboratory services are involved with collecting samples and carrying out analyses to improve the quality of the water.</p>
+<p>This urban wastewater treatment plant uses a process known as activated sludge to remove biological and chemical waste products from water so that the treated water can be used for other purposes. Thanks to several microorganisms and the dissolved oxygen supplied by an aeration system, biodegradable pollutants can be transformed into new biomass.</p>
+<p>The plant is constituted by a primary settler, a biological reactor, and a secondary settler. After the biological reactor, where the level of substrate is reduced by the action of microorganisms, the water flows to the secondary settler where the biomass sludge settles. Clean water hence remains at the top of the settler and can be easily carried out of the plant. A portion of the sludge is returned to the bioreactor’s input to maintain an appropriate level of biomass, allowing the oxidation of organic matter, while the rest of the sludge is purged.</p>
+<center>
+<img style="width: 500px;" src="Figures/plant.png">
+</center>
+<p><br></p>
+<p>Promptly recognizing when the plant’s faults occur is extremely important for healthcare, which is why this dataset of 39 variables, referring to 527 consecutive days, was created. The data come from the <a href="https://archive.ics.uci.edu/ml/datasets/Water+Treatment+Plant">UCI Machine Learning Repository</a>, a collection of databases, domain theories and data generators that are used by the machine learning community for the empirical analysis of machine learning algorithms.</p>
+<p>This dataset, called <a href="https://archive.ics.uci.edu/ml/datasets/Water+Treatment+Plant"><em>Water Treatment Plant Dataset</em></a>, has already been analyzed by a knowledge acquisition tool, Linneo+ (Béjar Alonso, Poch Espallargas, Cortés, 1993), which works incrementally with an unsupervised learning strategy and then uses information about the domain elements (domain theory) to induce classes and bias the results. This method is called <em>conceptual clustering</em> because a concept description is provided for each distinguished class.</p>
+<p>In the literature, it is common practise to predict faults through such methods taking advantage of external information; however, this information is not always available when the faults need to be identified. In addition, the authors of Linneo+ did not make public the a priori knowledge nor the details of their results. However, it was clearly stated when the malfunctioning days occurred, therefore we relied on this information to assess whether the clustering algorithms managed to detect the faults.</p>
+<p>This project aims to use data-based methods to properly diagnose the faults of the plant. More specifically, we are interested in:</p>
+<ul>
+<li><p>Classifying the wastewater treatment plant’s operational state and hence predicting faults through the state variables at each stage of the treatment process.</p></li>
+<li><p>Understanding how the existing clustering methods perform in the analysis of the dataset.</p></li>
+<li><p>Assessing whether variable selection improves clustering.</p></li>
+</ul>
+<div id="the-dataset" class="section level3">
+<h3>The Dataset</h3>
+<p>Given the social relevance of these plants, many variables related to the organic matter and the microorganisms have been measured, thus providing a highly multivariate dataset.</p>
+<p>The 38 variables that compose the dataset (plus an additional variable indicating the day of measurement) are a set of system variables measured in several parts of the plant (at the input, after the pre-treatment, at the input of the biological reactor, and at the water output of the plant) with a daily frequency. Eight of them are quality indicators, and nine of them are percentages of performance. The measured quantities are:</p>
+<ul>
+<li><p><strong>Flow to the plant</strong>: a plant must be able to handle fluctuations in the quantity and quality of the wastewater it receives to ensure that proper treatment is granted at all times because peaks vary according to different times of the day and days of the week.</p></li>
+<li><p><strong>Zinc</strong>: it is a heavy metal present in wastewater as a pollutant and hence has to be removed.</p></li>
+<li><p><strong>pH</strong>: it is the measure of the inverse concentration of hydrogen ions, and it is a crucial quantity because the acidity (low pH) or alkalinity (high pH) of wastewater affects the treatment and the environment. It should be between 6 and 9 to protect beneficial organisms.</p></li>
+<li><p><strong>Biological oxygen demand</strong> (BOD): it is used to indicate the organic quality of water and the effectiveness of wastewater treatment plants. It quantifies the milligrams of dissolved oxygen needed by aerobic microorganisms in a water body to break down in the dark the organic material present in a liter of water at 20 °C in 5 days of incubation.</p></li>
+<li><p><strong>Chemical oxygen demand</strong> (COD): it is an indirect measure of the number of organic pollutants in wastewater and a useful indicator of water quality. It represents the amount of oxygen necessary for the complete chemical oxidation of organic and inorganic components in a water sample. It is sometimes preferable to the BOD because it is faster to get and less error-sensitive during the measurement procedure.</p></li>
+<li><p><strong>Suspended solids</strong>: they are small solid particles that remain in suspension in the wastewater when passed through a filter and constitute nearly 30% of the solids included in it. They are eliminated from the wastewater using sedimentation and filtration procedures so that water can become drinking water.</p></li>
+<li><p><strong>Volatile suspended solids</strong>: they are the part of the total solids that is lost when the total solids are heated at high temperatures (the part that remains is called “suspended solids”)</p></li>
+<li><p><strong>Sediments</strong>: they are solid particles entrained by the turbulence of moving water and are removed thanks to settling basins during the sedimentation process.</p></li>
+<li><p><strong>Conductivity</strong>: it measures the ability of an electrolyte solution to conduct electricity and is used to monitor water purification systems’ performance.</p></li>
+</ul>
+<center>
+<img style="width: 600px;" src="Figures/Table1.png">
+</center>
+</div>
+</div>
+<div id="methods" class="section level1">
+<h1>Methods</h1>
+<p>In this section, we review the statistical methods that have been applied in the data analysis.</p>
+<div id="data-transformation" class="section level2">
+<h2>Data transformation</h2>
+<p>Data transformations are commonly used to improve the normality distribution of the variables, the validity of their association measures, and equalize their variances. As such, they are an important aspect of data cleaning. Even in the presence of “robust” analyses or non-parametric tests, attending to this issue can improve the results, especially when substantial non-normality is present (Zimmerman, 1995).</p>
+<p>Box Cox transformations are a family of power transformations that help to find the optimal normalizing transformation for each variable, eliminating the need to randomly try different transformations to determine the best option, provided that the variables are strictly positive. The Box and Cox transformation for a power parameter <span class="math inline">\(\lambda\)</span>, estimated using maximum likelihood, is described as:</p>
+<p><span class="math display">\[
+\begin{equation}
+y_i^{\lambda} =
+\begin{cases}
+\dfrac{y_i^{\lambda} - 1}{\lambda} &amp; \text{if } \lambda \ne 0 \\[0.2cm]
+\log(y_i)                          &amp; \text{if } \lambda =   0
+\end{cases}
+\end{equation}
+\]</span></p>
+<p>When <span class="math inline">\(\lambda = -1\)</span> the inverse transformation is applied, when <span class="math inline">\(\lambda =0\)</span> it is the logarithmic transformation, when <span class="math inline">\(\lambda =1\)</span> no transformation is needed, whereas when <span class="math inline">\(\lambda = 0.5\)</span> the square root transformation is applied.</p>
+</div>
+<div id="missing-data" class="section level2">
+<h2>Missing data</h2>
+<p>One of the problematic characteristics of this dataset is the large presence of missing values. About 27% of the observations had at least one missing value. Among the observations with missing information, there were also 8 faulty days (out of 14). If these observations were omitted, much information about the data would be lost with the risk of missing possible structures and patterns.</p>
+<p>We thus imputed the missing data by a non-parametric method known as <em>k-nearest neighbors</em>. It aims to estimate the missing values contained in a dataset based on the similarity between the statistical unit with missing entries and the <span class="math inline">\(k\)</span> closest observations. This similarity is evaluated by computing the Euclidean distance between the observations and <span class="math inline">\(k\)</span> is an integer representing how many nearest neighbors should be taken into account.</p>
+<p>Hence, an important choice is the value of <span class="math inline">\(k\)</span>, which determines the observations with the closest profile to the unit containing the missing value. The missing value is computed as a weighted average of the k-values in that sample of neighbors so that only the nearest neighbors contribute. Of course, any imputation carries over some risks and may impact the result. We will furtherly discuss this in the concluding section.</p>
+</div>
+<div id="clustering" class="section level2">
+<h2>Clustering</h2>
+<p>Given a set of elements with a vector of attributes, clustering aims to partition the data into disjoint sets, called clusters, so that within each set the attribute vectors are similar, while vectors of disjoint sets are dissimilar. Its purpose is to identify groups of similar objects and discover interesting distributions and patterns in large datasets.
+Many decisions must be made, including the choice of the clustering method, the definition of “dissimilarity”, and several a priori assumptions.</p>
+<div id="dissimilarity-measure" class="section level3">
+<h3>Dissimilarity measure</h3>
+<p>Units on which numeric variables only have been measured can be aggregated through two types of distances:</p>
+<ul>
+<li><p>The <strong>Euclidean</strong> distance for two objects <em>i</em> and <em>j</em> in the <em>p</em>-dimensional space is computed as <span class="math inline">\(d_{ij} = \sqrt{\sum_{k = 1}^p (x_{ik} - x_{jk})^2}\)</span>. By using squares, it gives more weight to variables with larger differences, i.e. two observations are treated as less similar if there is a very large dissimilarity on one variable and small dissimilarities on all variables. However, all variables are given the same importance and the fact that there may be correlation between them or that there may be differences in the variances is neglected.</p></li>
+<li><p>The <strong>Manhattan</strong> distance for two objects <em>i</em> and <em>j </em>in the <em>p</em>-dimensional space is computed as <span class="math inline">\(d_{ij} = \sum_{k = 1}^p | x_{ik} - x_{jk} |\)</span>. It is the sum of the absolute differences of the Cartesian coordinates of the two points.</p></li>
+</ul>
+<p>When the variables have been standardized, the two distance measures are almost equal. In this project, we used the Euclidean distance as a measure of the dissimilarity between units.</p>
+</div>
+<div id="hierarchical-clustering" class="section level3">
+<h3>Hierarchical clustering</h3>
+<p>Hierarchical clustering proceeds successively by either merging small clusters into larger ones, or by splitting larger clusters. The result is the dendrogram, a tree of clusters which shows how the clusters are related. By cutting it at a desired level, a clustering of the data items into disjoint groups is obtained. We use agglomerative algorithms, which produce a sequence of clustering schemes with a decreasing number of clusters at each step. The clustering scheme produced at each step results from the previous one by merging the two closest clusters. The differences among the various approaches lie in the evaluation of the dissimilarity between clusters:</p>
+<ul>
+<li><p><strong>Single linkage</strong>: the distance between two clusters is defined as the minimum distance between the two closest points, one belonging to the first cluster and the other to the second one. It is a good method when clusters look well separated, but not in presence of overlapping clusters, because of the so called “chaining effect” (i.e., in order to merge two clusters, only two similar observations from two different clusters are required). Clusters obtained with this method tend to have a long and narrow shape and be internally poorly homogeneous. The dendrogram is characterized by short branches.</p></li>
+<li><p><strong>Complete linkage</strong>: the distance between two clusters is defined as the maximum distance between the two furthest points, one belonging to the first cluster and the other to the second one. The obtained clusters are spherical and the dendrogram has longer branches because the clusters form at larger distances.</p></li>
+<li><p><strong>Average linkage</strong>: the distance between two clusters is defined as the average of all the dissimilarities between pairs of points one from each cluster. The detected clusters are more homogeneous and well distinguished.</p></li>
+<li><p><strong>Centroid linkage</strong>: the distance between two clusters is defined as the Euclidean distance between the two cluster centres (the cluster centre is the mean vector of the observed variables in a certain cluster). A problem that may be encountered with this approach is that, as a consequence of the fact that the centre will move as clusters are merged and that some units may need to be switched from their original clusters, the distance between merged clusters may decrease between steps, making the results less interpretable. The identified clusters have a spherical shape.</p></li>
+<li><p><strong>Ward’s method</strong>: the distance between two clusters is defined as the deviance between the two clusters. It joins groups that do not increase the overall heterogeneity too much. The aim is to unify the groups such that their merging implies the smallest increase of the “deviance within” the whole partition. It identifies spherical homogeneous clusters of similar sizes.</p></li>
+</ul>
+<p><em>Additional considerations</em>: Each partition in <em>k</em> groups is optimal in a step-wise sense: it is the best partition in <span class="math inline">\(k\)</span> groups, given the partitions in <span class="math inline">\(k+1\)</span> groups defined at the previous step. Moreover, when two clusters are merged, they remain so until the end of the hierarchy. This means that a mistake committed in the initial phase of the classification can never be corrected, which may be a serious drawback. However, they are more efficient in handling noise and outliers than partitioning algorithms, even if they break down due to their non-linear time complexity.</p>
+</div>
+<div id="partitioning-clustering" class="section level3">
+<h3>Partitioning clustering</h3>
+<p>Partitioning clustering methods directly decompose the dataset into a set of <em>k</em> disjoint clusters, giving rise to a single partition, for this reason the number of clusters has to be specified in advance. Applicable mainly to numerical datasets, they are unable to handle noise and outliers and not suitable to discover clusters with non-convex shapes.</p>
+<p>K-means algorithm is one of the most popular partitioning clustering methods and its aim is the optimisation of an objective function that attempts to minimize the distance of each point from the center of the cluster to which the point belongs. The algorithm begins by initialising a set of <em>k</em> cluster centers, then it assigns each observation to the cluster whose center is nearer, and recomputes the centers. The process continues until the centers of the clusters stop changing. It computes the centroid vector for each cluster according to the criterion of minimizing the mean squared distance between the original vectors and the centroid vectors.</p>
+</div>
+<div id="mixture-model-based-clustering" class="section level3">
+<h3>Mixture Model-based clustering</h3>
+<p>Model-based clustering is based on the idea that the observed data come from a population with several subpopulations. The general idea is to model each of the subpopulations separately and the overall population as a mixture of these subpopulations, using finite mixture models. The general form of a finite mixture model with <em>G</em> groups is <span class="math inline">\(f ( x ) = \sum_{g=1}^G \pi_g f_g(x)\)</span>, where <span class="math inline">\(\pi_g\)</span> is the proportion of the population in the <span class="math inline">\(g\)</span>-th group and <span class="math inline">\(f_g(\cdot)\)</span> is the probability density function for the <span class="math inline">\(g\)</span>-th group. The subpopulations are often modelled by members of the same parametric density family, in which case the finite mixture model can be written as <span class="math inline">\(f(\boldsymbol x) = \sum_{g=1}^G \pi_g f(\boldsymbol x|\boldsymbol \phi_g)\)</span>, where <span class="math inline">\(\boldsymbol \phi_g\)</span> is the parameter vector for the <span class="math inline">\(g\)</span>-th group.</p>
+<p>The mixture model can be used to partition the data into clusters using the optimal (Bayes) rule for classification. This classifies observation <span class="math inline">\(x\)</span> to cluster <span class="math inline">\(g\)</span> if the posterior probability that it belongs to group <span class="math inline">\(g\)</span> (i.e. the posterior probability of each mixture component given a data point) is greater than the posterior probabilities that it belongs to any other group; points associated with the same component form one cluster. The model parameters are estimated by the Expectation-Maximisation algorithm (Dempster et al., 1977).</p>
+<p>Model selection methods that involve Bayes factors (i.e. the posterior odds for a model <span class="math inline">\(M_1\)</span> against a model <span class="math inline">\(M_2\)</span> when their prior model probabilities are equal) are used to decide the number of clusters. Because of the difficulty in computing them, Bayes factors are approximated by</p>
+<p><span class="math display">\[
+BIC = 2 \log(\text{maximized log-likelihood}) - (\text{no. of parameters}) \log(n),
+\]</span></p>
+<p>where <span class="math inline">\(n\)</span> is the number of observations. Keribin (1998) showed the BIC to be consistent for the choice of the number of clusters; differences of less than 2 between BIC values are typically viewed as barely worth mentioning, while differences greater than 10 are regarded as strong evidence.</p>
+<p>These algorithms can handle arbitrary shaped collections of points as well as clusters of different sizes and they efficiently separate noise (outliers). On the other hand, an obvious problem is that, as clusters are identified with the components of the mixture model, if the latter is not precisely true, clusters are no longer well defined.</p>
+<p>Further advantages are that a probability distribution is obtained for each cluster and data of different characteristics can be handled. However, equating a component with a cluster may not always correspond to truth and the mixture components may not align with the hills of the density, especially in case of poorly separated clusters or of violation of the assumed parametric distribution.</p>
+<div id="gaussian-mixture-model-based-clustering" class="section level4">
+<h4>Gaussian mixture model-based clustering</h4>
+<p>If the components of the mixture have a multivariate normal distribution, that is, <span class="math inline">\(f(\cdot | \boldsymbol \phi_g) = MVN(\cdot | \boldsymbol \mu_g, \boldsymbol \Sigma_g)\)</span>, then a so called Gaussian mixture model is defined. The identified clusters are ellipsoidal, spherical and cylindrical and if all the observations have a normal distribution, with the identity matrix as covariance matrix, we get the <span class="math inline">\(k\)</span>-means clustering. One practical issue with multivariate normal modelling of the components is that if the model is unconstrained, the number of parameters grows rapidly with the dimension and with the number of clusters, leading to a possible overfitting and degradation of performance.</p>
+<p>One way of alleviating this is to impose restrictions on the covariance matrices. The covariance matrix can be decomposed, as was done by Banfield and Raftery (1993), as <span class="math inline">\(\boldsymbol \Sigma_g = \lambda_g \boldsymbol D_g \boldsymbol A_g \boldsymbol D_g^T\)</span>, where <span class="math inline">\(\lambda_g\)</span> is the largest eigenvalue of <span class="math inline">\(\boldsymbol \Sigma_g\)</span> and controls the volume of the <span class="math inline">\(g\)</span>-th cluster; <span class="math inline">\(\boldsymbol D_g\)</span> is the matrix of eigenvectors of <span class="math inline">\(\boldsymbol \Sigma_g\)</span>, which controls the orientation of that cluster and <span class="math inline">\(\boldsymbol A_g\)</span> is a diagonal matrix with the scaled eigenvalues as entries, which controls the shape of that cluster.</p>
+<p>By imposing constraints on the various elements of this decomposition, a large range of models is available, from the simple spherical models that have fixed shape to the least parsimonious model where all elements of the decomposition are allowed to vary across all clusters.</p>
+</div>
+<div id="skew-normal-mixture-model-based-clustering" class="section level4">
+<h4>Skew-normal mixture model-based clustering</h4>
+<p>An approach to model-based clustering aimed to detect non-elliptical clusters makes use of skew-normal components (Lee, McLachlan, 2013). The term skew-normal refers to a parametric class of probability distributions which includes the standard normal as a special case.
+A <em>p</em>-variate random vector <span class="math inline">\(\boldsymbol Y\)</span> has a multivariate skew-normal distribution if its density is given by:</p>
+<p><span class="math display">\[
+f(\boldsymbol y; \boldsymbol \mu, \boldsymbol \Sigma, \boldsymbol \delta) = 2 \phi_p(\boldsymbol y; \boldsymbol \mu, \boldsymbol \Sigma)\Phi_p(\boldsymbol \delta^T \boldsymbol \Sigma^{-1} (\boldsymbol y - \boldsymbol \mu); 0, 1 - \boldsymbol \delta^T \boldsymbol \Sigma^{-1} \boldsymbol \delta),
+\]</span></p>
+<p>where <span class="math inline">\(\boldsymbol \mu\)</span> is the location vector, <span class="math inline">\(\boldsymbol \Sigma\)</span> a scale matrix and <span class="math inline">\(\boldsymbol \delta\)</span> is the skewness vector. We let <span class="math inline">\(\phi_p(\cdot; \boldsymbol \mu, \boldsymbol \Sigma)\)</span> be the <span class="math inline">\(p\)</span>-variate normal distribution with mean vector <span class="math inline">\(\boldsymbol \mu\)</span> and covariance matrix <span class="math inline">\(\boldsymbol \Sigma\)</span>, and <span class="math inline">\(\Phi_P(\cdot; \boldsymbol \mu, \boldsymbol \Sigma)\)</span> the corresponding distribution function.</p>
+<p>As a generalization of the normal law, this distribution is a natural choice in all practical situations in which there is some skewness present. The level curves are not ellipsis anymore, but “drops” and the clusters identified are not spherical, as in <span class="math inline">\(k\)</span>-means or in normal mixture models, but skew.</p>
+</div>
+</div>
+<div id="modal-clustering" class="section level3">
+<h3>Modal clustering</h3>
+<p>It is a non-parametric approach (Li, Ray, and Lindsey, 2007) that keeps the advantages of model-based clustering, but with the benefit that data are allowed to reveal a non-parametric distribution for each cluster and with the guarantee that every cluster accounts for a distinct hill (i.e. a bump) of the probability density. To avoid restrictions imposed by parametric assumptions, the data are modelled using Gaussian kernel density functions, which have a mixture structure.
+The advantage of modal clustering is the greater flexibility because there is no identification between the mixture components of a distribution and the clusters, as in mixture-model-based clustering.</p>
+<p>The Modal EM (MEM) algorithm finds an increasing path from any point to a local maximum of the density, that is, a hilltop and associates the data points to their modes. It comprises two iterative steps similar to the expectation and maximization steps in EM (Dempster et al., 1977), although it is quite different from the latter, as its aim is not to maximize the likelihood of the data over the parameters of an assumed distribution, but to find the local maxima of a given distribution.</p>
+<p>Let a mixture density be <span class="math inline">\(f(x) = \sum_{k = 1}^K \pi_k f_k(x)\)</span>, where <span class="math inline">\(x \in \mathbb{R}^d\)</span>, <span class="math inline">\(\pi_k\)</span> is the prior probability mixture component <span class="math inline">\(k\)</span>, and <span class="math inline">\(f_k(x)\)</span> is the density of component <span class="math inline">\(k\)</span>. Given any initial value <span class="math inline">\(x^{(0)}\)</span>, MEM solves a local maximum of the mixture by alternating the following two steps until a stopping criterion is satisfied. Start with <span class="math inline">\(r=0\)</span>.</p>
+<ul>
+<li><p>Let <span class="math inline">\(p_k = \dfrac{ \pi_k f_k (x ^{(r)}) }{f(x^{(r)})}\)</span>, for <span class="math inline">\(k = 1, \ldots, K\)</span>.</p></li>
+<li><p>Update <span class="math inline">\(x^{(r+1)} = arg max \sum_{k = 1}^K p_k \log f_k (x)\)</span>.</p></li>
+</ul>
+<p>In the “Expectation step” the posterior probability of each mixture component <span class="math inline">\(k\)</span>, <span class="math inline">\(1 \le k \le K\)</span>, at the current point <span class="math inline">\(x^{(r)}\)</span> is computed, while the “Maximization step” finds the log-density with weights equal to the posterior probabilities. With MEM two points are grouped together if they correspond to the same mode. Therefore, a hierarchy of clusters can be constructed by increasing the variances of the Gaussian kernels because when the bandwidth <span class="math inline">\(\sigma\)</span> increases, the kernel density estimate becomes smoother and more points tend to climb to the same mode.
+Given a sequence of bandwidth, <span class="math inline">\(\sigma_1 &lt; \sigma_2 &lt; \ldots \sigma_\eta\)</span>, hierarchical clustering is performed in a bottom-up manner. We start with every point being a cluster itself. The set of cluster representatives is thus <span class="math inline">\(G_0 = {x_1, \ldots, x_n}\)</span>. This extreme case corresponds to the limit when <span class="math inline">\(\sigma\)</span> approaches 0. At any bandwidth <span class="math inline">\(\sigma_l\)</span>, the cluster representatives in <span class="math inline">\(G_{l-1}\)</span> obtained from the previous bandwidth are input to MAC using the kernel density estimate. The modes identified at this level form a new set of cluster representatives <span class="math inline">\(G_l\)</span> and this procedure is repeated across all <span class="math inline">\(\sigma_l\)</span>’s. However, an enlarged bandwidth may cause the aggregation of prominent clusters and may leave small “noisy” clusters unchanged. To overcome this problem, a new algorithm that merges clusters according to the separability between cliques has been provided by Li, Ray and Lindsay (2007), called <em>Hierarchical Mode Association Clustering</em> (HMAC).</p>
+</div>
+<div id="number-of-clusters-and-validation-measures" class="section level3">
+<h3>Number of clusters and validation measures</h3>
+<p>Finding the optimal (in terms of best fitting the inherent partitions of the dataset) number of clusters <span class="math inline">\(k\)</span> is a notorious difficult issue in cluster analysis. Visualisation of the data is a commonly used technique to verify the validity of the results, but in the case of large multidimensional datasets effective visualisation would be difficult. Sometimes it is in fact more a problem of an appropriate subject-matter dependent definition of the required number of clusters than an estimation problem.</p>
+<p>When using the estimation techniques to find <span class="math inline">\(k\)</span>, the most popular method is minimizing the Bayesian Information Criterion, which depends, however, on <span class="math inline">\(n\)</span> and how strongly separated the clusters are required to be (the larger <span class="math inline">\(n\)</span>, the stronger the BIC tendency to fit apparently homogeneous data subsets by more than one mixture component). The best approach hence seems to look for locally best choices of <span class="math inline">\(k\)</span> and using cluster validation and subject matter criteria to make a final decision.</p>
+<p>Some clustering approaches define the number of clusters implicitly and do not require criteria to compare solutions for different <span class="math inline">\(k\)</span>, but they only shift the problem to the choice of bandwidths or other parameters. Since clustering is an unsupervised process, no knowledge about the true subpopulations is available, and there is no a priori indication of the actual number of clusters present in a dataset, it is crucial to validate the clustering results. Researchers often want to check whether the resulting clusters carry more meaning than an optimal partition of homogeneous random data.</p>
+</div>
+</div>
+<div id="validation-criteria" class="section level2">
+<h2>Validation Criteria</h2>
+<p>As mentioned above, <em>cluster validation</em> consists in the exploration of the quality of the clustering results. The results of a clustering algorithm can be evaluated using:</p>
+<ul>
+<li><p><strong>External criteria</strong>: they use a pre-specified structure, which is imposed on a dataset and reflects the intuition about the clustering structure of the data. In this approach the basic idea is to test whether the points of the dataset are randomly structured or not.</p></li>
+<li><p><strong>Internal criteria</strong>: in terms of quantities and features inherent only to the dataset.</p></li>
+<li><p><strong>Relative criteria</strong>: by comparing the obtained clustering to other clustering schemes, resulting from the same algorithm, but with different parameter values. It does not have the drawback of the high computational demand of the previous criteria.</p></li>
+</ul>
+<p>Popular indices belonging to the above categories include:</p>
+<ul>
+<li><p><strong>Average Silhouette Width</strong>: it tries to balance a small within-cluster heterogeneity (which increases with <span class="math inline">\(k\)</span>) and a large between-cluster heterogeneity (which increases with <span class="math inline">\(k\)</span> as well) in a supposedly optimal way. The dissimilarities of observations from other observations of the same cluster are compared with dissimilarities from observations of the nearest other cluster, which emphasizes separation between a cluster and their neighbouring clusters. It can take values from -1 (when units are more similar to units of other clusters rather than to the ones they have been allocated to) to 1 (when units are well represented into clusters).</p></li>
+<li><p><strong>Adjusted Rand Index</strong> (Hubert and Arabie, 1985): it compares two partitions of the same set of objects. A value of onw indicates identical partitions, while zero is the expected value if the partitions are independent.</p></li>
+</ul>
+</div>
+<div id="time-series" class="section level2">
+<h2>Time series</h2>
+<p>The wastewater dataset is the realization of a multivariate time series of 527 observations, and hence there is dependence between the data points, which must be properly accounted for. Hidden Markov models are popular tools for finding inner states inside the data and at the same time taking into account the inherent dependencies.</p>
+<p>According to these models, the distribution that generates an observation depends on the state of an underlying and unobserved (hidden) Markov process. They are flexible general-purpose models for univariate and multivariate time series and can accommodate serial dependence. The marginal distribution of a hidden Markov model is a mixture distribution, while the Markov chains provide the underlying “parameter process”.</p>
+<p>Specifically, a hidden Markov model <span class="math inline">\({X_t: t \in \mathbb{N}}\)</span> is a particular kind of dependent mixture. With <span class="math inline">\(X^{(t)}\)</span> and <span class="math inline">\(C^{(t)}\)</span> representing the histories from time 1 to time <span class="math inline">\(t\)</span>, one can summarize the simplest model of this kind by:</p>
+<p><span class="math display">\[
+Pr(C_t| C^{(t-1)}) = Pr(C_t | C_{t-1}), \qquad t = 2, 3, ... (1) \\
+\]</span>
+<span class="math display">\[
+Pr(X_t| X^{(t-1)}, C^{(t)}) = Pr(X_t | C_{t}), \qquad t \in \mathbb{N} \, \, \, \, (2)
+\]</span></p>
+<p>The model consists of two parts: (1) an unobserved “parameter process” <span class="math inline">\({C_t : t = 1, 2, \ldots}\)</span>, satisfying the Markov property, and (2) the “state-dependent process” <span class="math inline">\({X_t: t = 1, 2, \ldots}\)</span> such that, when <span class="math inline">\(C_t\)</span> is known, the distribution of <span class="math inline">\(X_t\)</span> depends only on the current state <span class="math inline">\(C_t\)</span> and not on previous states or observations. A commonly used method of fitting HMM is the EM algorithm. A problem which arises naturally when one uses Hidden Markov Models is that of selecting an appropriate model, for example choosing an appropriate number of states <span class="math inline">\(m\)</span>, which is called the order of the HMM. The criterion we chose for model comparison was the BIC.</p>
+</div>
+<div id="principal-components" class="section level2">
+<h2>Principal Components</h2>
+<p>Principal component analysis (PCA) is one of the most popular multivariate statistical methods, first introduced by Pearson in 1901. The basic idea is to find a small number of linear combination of the observed variables which explain most of the variation in the data. We are essentially looking for a dimension along which the observations are maximally spread out. The first principal component is the linear combination with the maximal variance, the second one is the linear combination with maximal variance in a way orthogonal to the first one and so on.</p>
+<p>Formally, the first principal component is the linear combination having as vector of coefficients the eigenvector of the sample covariance matrix corresponding to the largest eigenvalue. It is therefore the linear combination of the elements of the observed variables having the largest variance.</p>
+<p>A drawback of principal components is their sensitivity to the units of measurement used for each variable. If there are large differences in their variances, which can happen either when the variables are expressed according to different measurement scales or when they have quite different ranges, then the principal components will tend to reproduce those variables with the largest variance. In these cases, it is highly recommended to work with standardized data rather than with raw data. As the variables in the data set presente the aforementioned problems, principal components will be derived from the correlation matrix.</p>
+<p>Besides deriving uncorrelated linear combinations with maximum variance, a further goal of PCA is to perform “<strong>dimension reduction</strong>” i.e. to reduce a large number of variables to a much smaller number of principal components whilst retaining as much as possible of the variation in the original variables.
+Many criteria have been proposed for the determination of the number of principal components to be retained, all of them are heuristic rules rather than formal rigorous procedures because PCA is a completely distribution-free method and it is mainly used for descriptive purposes:</p>
+<ul>
+<li><p><strong>Cumulative proportion of explained variance</strong>: this criterion suggests retaining as many principal components as those needed to explain approximately 80-90% of the total variance. Keeping <span class="math inline">\(m\)</span> principal components means that <span class="math inline">\(\dfrac{\sum_{k=1}^m l_k}{\sum_{k=1}^p l_k } * 100\)</span> is around 80-90%, where <span class="math inline">\(l_k\)</span> is the <span class="math inline">\(k\)</span>-th eigenvalue of the covariance (correlation) matrix.</p></li>
+<li><p><strong>Kaiser’s rule</strong>: this rule suggests retaining as many principal components as are the eigenvalues of the correlation matrix larger than 1 or, in case of raw data, as many as the eigenvalues whose variance is larger than <span class="math inline">\(\bar{l} = \dfrac{\sum_{k=1}^p l_k}{p}\)</span>. The reason is that we want to retain all principal components having a variance larger than the one related to the original variables, so we want to keep only those combinations which explain more than the average variance (1 may be considered the average variance for the standardized data).</p></li>
+<li><p><strong>Scree plot</strong>: this is a graphical criterion and a plot of the <span class="math inline">\(k\)</span>-th eigenvalue <span class="math inline">\(l_k\)</span> against <span class="math inline">\(k = 1, \ldots, p\)</span>. The rule suggests retaining as many principal components as are the eigenvalues before the occurrence of the elbow of the scree plot. After a sharp decline, in fact, the curve tends to become flat and this last portion corresponds to noise components, unable to capture the leading variability.</p></li>
+</ul>
+</div>
+<div id="variable-selection-in-model-based-clustering" class="section level2">
+<h2>Variable selection in model-based clustering</h2>
+<p>Sometimes it is possible that only fewer variables give a better partition of the data into clusters closer to the true underlying group structure and that the inclusion of unnecessary variables degrades the results. This is the reason why specific techniques have been presented to address the issue of variable selection, with the hope that removing irrelevant variables could improve the clustering performance.</p>
+<p>In particular, in the model-based clustering context, a dataset <span class="math inline">\(Y\)</span> is partitioned into three sets of variables at any stage of the algorithm:</p>
+<ul>
+<li><p><span class="math inline">\(Y^{(1)}\)</span>: the set of already selected clustering variables.</p></li>
+<li><p><span class="math inline">\(Y^{(2)}\)</span>: the variable(s) being considered for inclusion into or exclusion from the set of clustering variables</p></li>
+<li><p><span class="math inline">\(Y^{(3)}\)</span>: the remaining variables.</p></li>
+</ul>
+<p>The decision for inclusion or exclusion of <span class="math inline">\(Y^{(2)}\)</span> from the set of clustering variables is recast as one of comparing two models:</p>
+<ul>
+<li><p><span class="math inline">\(M_1\)</span> which specifies that <span class="math inline">\(Y^{(2)}\)</span> gives no additional information about the clustering.</p></li>
+<li><p><span class="math inline">\(M_2\)</span> which implies that <span class="math inline">\(Y^{(2)}\)</span> does provide additional information about clustering membership, after <span class="math inline">\(Y^{(1)}\)</span> has been observed.</p></li>
+</ul>
+<p>The two models are compared via an approximation of the Bayes factor for model <span class="math inline">\(M_1\)</span> against <span class="math inline">\(M_2\)</span> based on the data <span class="math inline">\(Y\)</span>, <span class="math inline">\(B_{12} = \dfrac{p(Y| M_1)}{p(Y|M_2)}\)</span>.</p>
+<p>The greedy search algorithm searches at each stage for the variable to add that most improves the clustering as measured by BIC, and then assesses whether one of the current clustering variables can be dropped, so the best combination of number of groups and clustering models is chosen. The algorithm stops when no local improvement is possible. For more details on the steps of the algorithm and for the specific case in which the mixture components have multivariate normal distributions see Raftery and Dean (2006).</p>
+</div>
+<div id="biclustering" class="section level2">
+<h2>Biclustering</h2>
+<p>The biclustering framework, which shares the same aims of clustering, is however more flexible than the latter because there are no a priori constraints, rows and columns can be part of more than one bicluster or of no bicluster and different segments can have different sets of variables. According to Madeira and Oliveira (2004) a bicluster is a submatrix spanned by an arbitrary subset of rows <span class="math inline">\(r_i\)</span> and columns <span class="math inline">\(c_j\)</span>, with entries <span class="math inline">\(a_{ij}\)</span>, and it can have characteristic configurations:</p>
+<ul>
+<li><p><strong>Bicluster with constant values</strong>: a perfect constant bicluster is a sub-matrix <span class="math inline">\((I,J)\)</span>, where all values within the bicluster are equal for all <span class="math inline">\(i \in I\)</span> and all <span class="math inline">\(j \in J : a_{ij} = \mu\)</span>. However, they are usually masked by noise. The function used in this context is generally the variance, which is equal to 0 in case of constant biclusters.</p></li>
+<li><p><strong>Biclusters with constant values on rows or columns</strong>: they identify a subset of the rows with similar expression values across a subset of columns, allowing the expression levels to differ from row to row. A perfect bicluster with constant rows is a sub-matrix <span class="math inline">\((I,J)\)</span>, where all the values can be obtained from <span class="math inline">\(a_{ij} = \mu + \alpha_i\)</span> or <span class="math inline">\(a_{ij} = \mu \times \alpha_i\)</span>, where <span class="math inline">\(\mu\)</span> is the typical value within the bicluster and <span class="math inline">\(\alpha_i\)</span> is the (additive or multiplicative) adjustment for row <span class="math inline">\(i \in I\)</span>. The same reasoning can be applied to columns.</p></li>
+<li><p><strong>Biclusters with coherent values</strong>: when an additive model is used, a perfect bicluster <span class="math inline">\((I,J)\)</span> with coherent values is defined as a subset of rows and columns, whose values <span class="math inline">\(a_{ij}\)</span> are predicted from <span class="math inline">\(a_{ij = \mu + \alpha_i + \beta_j}\)</span>, where <span class="math inline">\(\mu\)</span> and <span class="math inline">\(\alpha_i\)</span> are defined as before and <span class="math inline">\(\beta_j\)</span> is the adjustment for column <span class="math inline">\(j \in J\)</span>. Other approaches use a multiplicative model.</p></li>
+</ul>
+<p>Several biclustering algorithms, which basically differ only in the type of the score or of the constrained model they use, have been developed. The biclustering problem is represented as an optimization problem, so that the score for each candidate bicluster, defined from an adjusted matrix, where normalization or standardization pre-processing is suggested, is defined as:</p>
+<p><span class="math display">\[
+H(I,J) = \dfrac{1}{||I|| \, ||J||} \sum_{i \in I, j \in J} (a_{ij} - a_{iJ} - a_{Ij} + a_{IJ})^2,
+\]</span></p>
+<p>where <span class="math inline">\(a_{iJ}\)</span> is the mean of row <span class="math inline">\(i\)</span>, <span class="math inline">\(a_{Ij}\)</span> is the mean of column <span class="math inline">\(j\)</span> and <span class="math inline">\(a_{IJ}\)</span> is the overall mean. Cheng and Church have developed heuristics to solve the constrained optimization problem.</p>
+<p>As pairs in a “good” bicluster are assumed to have a constant expression level (plus possibly additive row and column effects), after removing row, column and submatrix averages, the residual level should be as small as possible. A subgroup is therefore called a bicluster if the score is below a level <span class="math inline">\(\alpha\)</span> and above a <span class="math inline">\(\delta\)</span>-fraction of the whole data. Under certain conditions, the maximum bicluster problem can be NP-hard; hence a greedy algorithm that rapidly converges to a locally maximal submatrix has been suggested (Cheng and Church, 2000).</p>
+</div>
+</div>
+<div id="results" class="section level1">
+<h1>Results</h1>
+<div id="exploratory-data-analysis-and-pre-processing" class="section level2 tabset tabset-pills">
+<h2>Exploratory Data Analysis and Pre-processing</h2>
+<p>After loading the data set, we can have a look at the summary statistics of the variables.</p>
+<pre class="r"><code>water.data &lt;- read.delim(&quot;dataset.txt&quot;, sep = &quot;,&quot;, na.strings = &quot;?&quot;, header = FALSE) %&gt;%
+  as_tibble()
+
+colnames(water.data) &lt;- c(&quot;day&quot;,&quot;Q.E&quot;,&quot;ZN.E&quot;,&quot;PH.E&quot;,&quot;DBO.E&quot;,&quot;DQO.E&quot;,&quot;SS.E&quot;,&quot;SSV.E&quot;,&quot;SED.E&quot;,&quot;COND.E&quot;,
+                    &quot;PH.P&quot;,&quot;DBO.P&quot;,&quot;SS.P&quot;,&quot;SSV.P&quot;,&quot;SED.P&quot;,&quot;COND.P&quot;,&quot;PH.D&quot;,&quot;DBO.D&quot;,&quot;DQO.D&quot;,
+                    &quot;SS.D&quot;,&quot;SSV.D&quot;,&quot;SED.D&quot;,&quot;COND.D&quot;,&quot;PH.S&quot;,&quot;DBO.S&quot;,&quot;DQO.S&quot;,&quot;SS.S&quot;,&quot;SSV.S&quot;,
+                    &quot;SED.S&quot;,&quot;COND.S&quot;,&quot;RD.DBO.P&quot;,&quot;RD.SS.P&quot;,&quot;RD.SED.P&quot;,&quot;RD.DBO.S&quot;,&quot;RD.DQO.S&quot;,
+                    &quot;RD.DBO.G&quot;,&quot;RD.DQO.G&quot;,&quot;RD.SS.G&quot;,&quot;RD.SED.G&quot;)
+
+skimr::skim(water.data)</code></pre>
+<table style='width: auto;'
+        class='table table-condensed'>
+<caption>
+<span id="tab:unnamed-chunk-1">Table 1: </span>Data summary
+</caption>
+<thead>
+<tr>
+<th style="text-align:left;">
+</th>
+<th style="text-align:left;">
+</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:left;">
+Name
+</td>
+<td style="text-align:left;">
+water.data
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+Number of rows
+</td>
+<td style="text-align:left;">
+527
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+Number of columns
+</td>
+<td style="text-align:left;">
+39
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+_______________________
+</td>
+<td style="text-align:left;">
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+Column type frequency:
+</td>
+<td style="text-align:left;">
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+factor
+</td>
+<td style="text-align:left;">
+1
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+numeric
+</td>
+<td style="text-align:left;">
+38
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+________________________
+</td>
+<td style="text-align:left;">
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+Group variables
+</td>
+<td style="text-align:left;">
+None
+</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Variable type: factor</strong></p>
+<table>
+<thead>
+<tr>
+<th style="text-align:left;">
+skim_variable
+</th>
+<th style="text-align:right;">
+n_missing
+</th>
+<th style="text-align:right;">
+complete_rate
+</th>
+<th style="text-align:left;">
+ordered
+</th>
+<th style="text-align:right;">
+n_unique
+</th>
+<th style="text-align:left;">
+top_counts
+</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:left;">
+day
+</td>
+<td style="text-align:right;">
+0
+</td>
+<td style="text-align:right;">
+1
+</td>
+<td style="text-align:left;">
+FALSE
+</td>
+<td style="text-align:right;">
+527
+</td>
+<td style="text-align:left;">
+D-1: 1, D-1: 1, D-1: 1, D-1: 1
+</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Variable type: numeric</strong></p>
+<table>
+<thead>
+<tr>
+<th style="text-align:left;">
+skim_variable
+</th>
+<th style="text-align:right;">
+n_missing
+</th>
+<th style="text-align:right;">
+complete_rate
+</th>
+<th style="text-align:right;">
+mean
+</th>
+<th style="text-align:right;">
+sd
+</th>
+<th style="text-align:right;">
+p0
+</th>
+<th style="text-align:right;">
+p25
+</th>
+<th style="text-align:right;">
+p50
+</th>
+<th style="text-align:right;">
+p75
+</th>
+<th style="text-align:right;">
+p100
+</th>
+<th style="text-align:left;">
+hist
+</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:left;">
+Q.E
+</td>
+<td style="text-align:right;">
+18
+</td>
+<td style="text-align:right;">
+0.97
+</td>
+<td style="text-align:right;">
+37226.57
+</td>
+<td style="text-align:right;">
+6636.00
+</td>
+<td style="text-align:right;">
+10050.0
+</td>
+<td style="text-align:right;">
+32888.00
+</td>
+<td style="text-align:right;">
+35990.00
+</td>
+<td style="text-align:right;">
+41372.00
+</td>
+<td style="text-align:right;">
+60081.0
+</td>
+<td style="text-align:left;">
+▁▂▇▃▁
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+ZN.E
+</td>
+<td style="text-align:right;">
+3
+</td>
+<td style="text-align:right;">
+0.99
+</td>
+<td style="text-align:right;">
+2.36
+</td>
+<td style="text-align:right;">
+2.75
+</td>
+<td style="text-align:right;">
+0.1
+</td>
+<td style="text-align:right;">
+0.90
+</td>
+<td style="text-align:right;">
+1.50
+</td>
+<td style="text-align:right;">
+3.00
+</td>
+<td style="text-align:right;">
+33.5
+</td>
+<td style="text-align:left;">
+▇▁▁▁▁
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+PH.E
+</td>
+<td style="text-align:right;">
+0
+</td>
+<td style="text-align:right;">
+1.00
+</td>
+<td style="text-align:right;">
+7.81
+</td>
+<td style="text-align:right;">
+0.25
+</td>
+<td style="text-align:right;">
+6.9
+</td>
+<td style="text-align:right;">
+7.60
+</td>
+<td style="text-align:right;">
+7.80
+</td>
+<td style="text-align:right;">
+8.00
+</td>
+<td style="text-align:right;">
+8.7
+</td>
+<td style="text-align:left;">
+▁▅▇▅▁
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+DBO.E
+</td>
+<td style="text-align:right;">
+23
+</td>
+<td style="text-align:right;">
+0.96
+</td>
+<td style="text-align:right;">
+188.71
+</td>
+<td style="text-align:right;">
+62.06
+</td>
+<td style="text-align:right;">
+31.0
+</td>
+<td style="text-align:right;">
+146.75
+</td>
+<td style="text-align:right;">
+182.50
+</td>
+<td style="text-align:right;">
+223.00
+</td>
+<td style="text-align:right;">
+438.0
+</td>
+<td style="text-align:left;">
+▁▇▅▁▁
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+DQO.E
+</td>
+<td style="text-align:right;">
+6
+</td>
+<td style="text-align:right;">
+0.99
+</td>
+<td style="text-align:right;">
+406.90
+</td>
+<td style="text-align:right;">
+120.36
+</td>
+<td style="text-align:right;">
+81.0
+</td>
+<td style="text-align:right;">
+325.00
+</td>
+<td style="text-align:right;">
+400.00
+</td>
+<td style="text-align:right;">
+478.00
+</td>
+<td style="text-align:right;">
+941.0
+</td>
+<td style="text-align:left;">
+▁▇▆▁▁
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+SS.E
+</td>
+<td style="text-align:right;">
+1
+</td>
+<td style="text-align:right;">
+1.00
+</td>
+<td style="text-align:right;">
+227.44
+</td>
+<td style="text-align:right;">
+135.94
+</td>
+<td style="text-align:right;">
+98.0
+</td>
+<td style="text-align:right;">
+170.00
+</td>
+<td style="text-align:right;">
+196.00
+</td>
+<td style="text-align:right;">
+242.00
+</td>
+<td style="text-align:right;">
+2008.0
+</td>
+<td style="text-align:left;">
+▇▁▁▁▁
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+SSV.E
+</td>
+<td style="text-align:right;">
+11
+</td>
+<td style="text-align:right;">
+0.98
+</td>
+<td style="text-align:right;">
+61.39
+</td>
+<td style="text-align:right;">
+12.42
+</td>
+<td style="text-align:right;">
+13.2
+</td>
+<td style="text-align:right;">
+55.70
+</td>
+<td style="text-align:right;">
+64.30
+</td>
+<td style="text-align:right;">
+69.73
+</td>
+<td style="text-align:right;">
+85.0
+</td>
+<td style="text-align:left;">
+▁▁▃▇▃
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+SED.E
+</td>
+<td style="text-align:right;">
+25
+</td>
+<td style="text-align:right;">
+0.95
+</td>
+<td style="text-align:right;">
+4.59
+</td>
+<td style="text-align:right;">
+2.74
+</td>
+<td style="text-align:right;">
+0.4
+</td>
+<td style="text-align:right;">
+3.10
+</td>
+<td style="text-align:right;">
+4.50
+</td>
+<td style="text-align:right;">
+5.50
+</td>
+<td style="text-align:right;">
+36.0
+</td>
+<td style="text-align:left;">
+▇▁▁▁▁
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+COND.E
+</td>
+<td style="text-align:right;">
+0
+</td>
+<td style="text-align:right;">
+1.00
+</td>
+<td style="text-align:right;">
+1478.62
+</td>
+<td style="text-align:right;">
+394.90
+</td>
+<td style="text-align:right;">
+651.0
+</td>
+<td style="text-align:right;">
+1201.00
+</td>
+<td style="text-align:right;">
+1406.00
+</td>
+<td style="text-align:right;">
+1672.00
+</td>
+<td style="text-align:right;">
+3230.0
+</td>
+<td style="text-align:left;">
+▃▇▂▁▁
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+PH.P
+</td>
+<td style="text-align:right;">
+0
+</td>
+<td style="text-align:right;">
+1.00
+</td>
+<td style="text-align:right;">
+7.83
+</td>
+<td style="text-align:right;">
+0.23
+</td>
+<td style="text-align:right;">
+7.3
+</td>
+<td style="text-align:right;">
+7.70
+</td>
+<td style="text-align:right;">
+7.80
+</td>
+<td style="text-align:right;">
+8.00
+</td>
+<td style="text-align:right;">
+8.5
+</td>
+<td style="text-align:left;">
+▂▅▇▂▁
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+DBO.P
+</td>
+<td style="text-align:right;">
+40
+</td>
+<td style="text-align:right;">
+0.92
+</td>
+<td style="text-align:right;">
+206.21
+</td>
+<td style="text-align:right;">
+74.82
+</td>
+<td style="text-align:right;">
+32.0
+</td>
+<td style="text-align:right;">
+153.00
+</td>
+<td style="text-align:right;">
+197.00
+</td>
+<td style="text-align:right;">
+243.00
+</td>
+<td style="text-align:right;">
+517.0
+</td>
+<td style="text-align:left;">
+▂▇▃▁▁
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+SS.P
+</td>
+<td style="text-align:right;">
+0
+</td>
+<td style="text-align:right;">
+1.00
+</td>
+<td style="text-align:right;">
+253.95
+</td>
+<td style="text-align:right;">
+147.46
+</td>
+<td style="text-align:right;">
+104.0
+</td>
+<td style="text-align:right;">
+184.00
+</td>
+<td style="text-align:right;">
+220.00
+</td>
+<td style="text-align:right;">
+272.00
+</td>
+<td style="text-align:right;">
+1692.0
+</td>
+<td style="text-align:left;">
+▇▁▁▁▁
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+SSV.P
+</td>
+<td style="text-align:right;">
+11
+</td>
+<td style="text-align:right;">
+0.98
+</td>
+<td style="text-align:right;">
+60.37
+</td>
+<td style="text-align:right;">
+12.39
+</td>
+<td style="text-align:right;">
+7.1
+</td>
+<td style="text-align:right;">
+54.18
+</td>
+<td style="text-align:right;">
+62.80
+</td>
+<td style="text-align:right;">
+69.03
+</td>
+<td style="text-align:right;">
+93.5
+</td>
+<td style="text-align:left;">
+▁▁▅▇▁
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+SED.P
+</td>
+<td style="text-align:right;">
+24
+</td>
+<td style="text-align:right;">
+0.95
+</td>
+<td style="text-align:right;">
+5.03
+</td>
+<td style="text-align:right;">
+3.35
+</td>
+<td style="text-align:right;">
+1.0
+</td>
+<td style="text-align:right;">
+3.00
+</td>
+<td style="text-align:right;">
+4.50
+</td>
+<td style="text-align:right;">
+6.00
+</td>
+<td style="text-align:right;">
+46.0
+</td>
+<td style="text-align:left;">
+▇▁▁▁▁
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+COND.P
+</td>
+<td style="text-align:right;">
+0
+</td>
+<td style="text-align:right;">
+1.00
+</td>
+<td style="text-align:right;">
+1496.03
+</td>
+<td style="text-align:right;">
+402.59
+</td>
+<td style="text-align:right;">
+646.0
+</td>
+<td style="text-align:right;">
+1217.00
+</td>
+<td style="text-align:right;">
+1420.00
+</td>
+<td style="text-align:right;">
+1713.50
+</td>
+<td style="text-align:right;">
+3170.0
+</td>
+<td style="text-align:left;">
+▃▇▃▁▁
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+PH.D
+</td>
+<td style="text-align:right;">
+0
+</td>
+<td style="text-align:right;">
+1.00
+</td>
+<td style="text-align:right;">
+7.81
+</td>
+<td style="text-align:right;">
+0.20
+</td>
+<td style="text-align:right;">
+7.1
+</td>
+<td style="text-align:right;">
+7.70
+</td>
+<td style="text-align:right;">
+7.80
+</td>
+<td style="text-align:right;">
+7.90
+</td>
+<td style="text-align:right;">
+8.4
+</td>
+<td style="text-align:left;">
+▁▃▇▇▁
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+DBO.D
+</td>
+<td style="text-align:right;">
+28
+</td>
+<td style="text-align:right;">
+0.95
+</td>
+<td style="text-align:right;">
+122.35
+</td>
+<td style="text-align:right;">
+37.02
+</td>
+<td style="text-align:right;">
+26.0
+</td>
+<td style="text-align:right;">
+97.00
+</td>
+<td style="text-align:right;">
+119.00
+</td>
+<td style="text-align:right;">
+148.00
+</td>
+<td style="text-align:right;">
+285.0
+</td>
+<td style="text-align:left;">
+▂▇▆▁▁
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+DQO.D
+</td>
+<td style="text-align:right;">
+9
+</td>
+<td style="text-align:right;">
+0.98
+</td>
+<td style="text-align:right;">
+274.05
+</td>
+<td style="text-align:right;">
+74.12
+</td>
+<td style="text-align:right;">
+80.0
+</td>
+<td style="text-align:right;">
+220.00
+</td>
+<td style="text-align:right;">
+274.00
+</td>
+<td style="text-align:right;">
+325.00
+</td>
+<td style="text-align:right;">
+511.0
+</td>
+<td style="text-align:left;">
+▂▆▇▃▁
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+SS.D
+</td>
+<td style="text-align:right;">
+2
+</td>
+<td style="text-align:right;">
+1.00
+</td>
+<td style="text-align:right;">
+94.22
+</td>
+<td style="text-align:right;">
+23.99
+</td>
+<td style="text-align:right;">
+49.0
+</td>
+<td style="text-align:right;">
+78.00
+</td>
+<td style="text-align:right;">
+90.00
+</td>
+<td style="text-align:right;">
+106.00
+</td>
+<td style="text-align:right;">
+244.0
+</td>
+<td style="text-align:left;">
+▇▇▁▁▁
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+SSV.D
+</td>
+<td style="text-align:right;">
+13
+</td>
+<td style="text-align:right;">
+0.98
+</td>
+<td style="text-align:right;">
+72.97
+</td>
+<td style="text-align:right;">
+10.47
+</td>
+<td style="text-align:right;">
+20.2
+</td>
+<td style="text-align:right;">
+67.40
+</td>
+<td style="text-align:right;">
+74.50
+</td>
+<td style="text-align:right;">
+79.50
+</td>
+<td style="text-align:right;">
+100.0
+</td>
+<td style="text-align:left;">
+▁▁▂▇▁
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+SED.D
+</td>
+<td style="text-align:right;">
+25
+</td>
+<td style="text-align:right;">
+0.95
+</td>
+<td style="text-align:right;">
+0.42
+</td>
+<td style="text-align:right;">
+0.38
+</td>
+<td style="text-align:right;">
+0.0
+</td>
+<td style="text-align:right;">
+0.20
+</td>
+<td style="text-align:right;">
+0.30
+</td>
+<td style="text-align:right;">
+0.50
+</td>
+<td style="text-align:right;">
+3.5
+</td>
+<td style="text-align:left;">
+▇▁▁▁▁
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+COND.D
+</td>
+<td style="text-align:right;">
+0
+</td>
+<td style="text-align:right;">
+1.00
+</td>
+<td style="text-align:right;">
+1490.57
+</td>
+<td style="text-align:right;">
+399.99
+</td>
+<td style="text-align:right;">
+85.0
+</td>
+<td style="text-align:right;">
+1225.50
+</td>
+<td style="text-align:right;">
+1428.00
+</td>
+<td style="text-align:right;">
+1701.00
+</td>
+<td style="text-align:right;">
+3690.0
+</td>
+<td style="text-align:left;">
+▁▇▅▁▁
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+PH.S
+</td>
+<td style="text-align:right;">
+1
+</td>
+<td style="text-align:right;">
+1.00
+</td>
+<td style="text-align:right;">
+7.71
+</td>
+<td style="text-align:right;">
+0.19
+</td>
+<td style="text-align:right;">
+7.0
+</td>
+<td style="text-align:right;">
+7.60
+</td>
+<td style="text-align:right;">
+7.70
+</td>
+<td style="text-align:right;">
+7.80
+</td>
+<td style="text-align:right;">
+9.7
+</td>
+<td style="text-align:left;">
+▂▇▁▁▁
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+DBO.S
+</td>
+<td style="text-align:right;">
+23
+</td>
+<td style="text-align:right;">
+0.96
+</td>
+<td style="text-align:right;">
+19.99
+</td>
+<td style="text-align:right;">
+17.59
+</td>
+<td style="text-align:right;">
+3.0
+</td>
+<td style="text-align:right;">
+14.00
+</td>
+<td style="text-align:right;">
+18.00
+</td>
+<td style="text-align:right;">
+23.00
+</td>
+<td style="text-align:right;">
+320.0
+</td>
+<td style="text-align:left;">
+▇▁▁▁▁
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+DQO.S
+</td>
+<td style="text-align:right;">
+18
+</td>
+<td style="text-align:right;">
+0.97
+</td>
+<td style="text-align:right;">
+87.29
+</td>
+<td style="text-align:right;">
+39.03
+</td>
+<td style="text-align:right;">
+9.0
+</td>
+<td style="text-align:right;">
+64.00
+</td>
+<td style="text-align:right;">
+84.00
+</td>
+<td style="text-align:right;">
+101.00
+</td>
+<td style="text-align:right;">
+350.0
+</td>
+<td style="text-align:left;">
+▇▇▁▁▁
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+SS.S
+</td>
+<td style="text-align:right;">
+5
+</td>
+<td style="text-align:right;">
+0.99
+</td>
+<td style="text-align:right;">
+22.24
+</td>
+<td style="text-align:right;">
+16.34
+</td>
+<td style="text-align:right;">
+6.0
+</td>
+<td style="text-align:right;">
+14.00
+</td>
+<td style="text-align:right;">
+19.00
+</td>
+<td style="text-align:right;">
+24.00
+</td>
+<td style="text-align:right;">
+238.0
+</td>
+<td style="text-align:left;">
+▇▁▁▁▁
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+SSV.S
+</td>
+<td style="text-align:right;">
+17
+</td>
+<td style="text-align:right;">
+0.97
+</td>
+<td style="text-align:right;">
+80.15
+</td>
+<td style="text-align:right;">
+9.16
+</td>
+<td style="text-align:right;">
+29.2
+</td>
+<td style="text-align:right;">
+75.00
+</td>
+<td style="text-align:right;">
+81.15
+</td>
+<td style="text-align:right;">
+85.70
+</td>
+<td style="text-align:right;">
+100.0
+</td>
+<td style="text-align:left;">
+▁▁▂▇▃
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+SED.S
+</td>
+<td style="text-align:right;">
+28
+</td>
+<td style="text-align:right;">
+0.95
+</td>
+<td style="text-align:right;">
+0.04
+</td>
+<td style="text-align:right;">
+0.20
+</td>
+<td style="text-align:right;">
+0.0
+</td>
+<td style="text-align:right;">
+0.00
+</td>
+<td style="text-align:right;">
+0.01
+</td>
+<td style="text-align:right;">
+0.02
+</td>
+<td style="text-align:right;">
+3.5
+</td>
+<td style="text-align:left;">
+▇▁▁▁▁
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+COND.S
+</td>
+<td style="text-align:right;">
+1
+</td>
+<td style="text-align:right;">
+1.00
+</td>
+<td style="text-align:right;">
+1494.82
+</td>
+<td style="text-align:right;">
+387.91
+</td>
+<td style="text-align:right;">
+683.0
+</td>
+<td style="text-align:right;">
+1234.50
+</td>
+<td style="text-align:right;">
+1432.00
+</td>
+<td style="text-align:right;">
+1692.25
+</td>
+<td style="text-align:right;">
+3950.0
+</td>
+<td style="text-align:left;">
+▆▇▁▁▁
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+RD.DBO.P
+</td>
+<td style="text-align:right;">
+62
+</td>
+<td style="text-align:right;">
+0.88
+</td>
+<td style="text-align:right;">
+39.09
+</td>
+<td style="text-align:right;">
+14.79
+</td>
+<td style="text-align:right;">
+0.6
+</td>
+<td style="text-align:right;">
+29.30
+</td>
+<td style="text-align:right;">
+39.60
+</td>
+<td style="text-align:right;">
+49.20
+</td>
+<td style="text-align:right;">
+79.1
+</td>
+<td style="text-align:left;">
+▂▅▇▅▁
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+RD.SS.P
+</td>
+<td style="text-align:right;">
+4
+</td>
+<td style="text-align:right;">
+0.99
+</td>
+<td style="text-align:right;">
+58.52
+</td>
+<td style="text-align:right;">
+12.80
+</td>
+<td style="text-align:right;">
+5.3
+</td>
+<td style="text-align:right;">
+50.55
+</td>
+<td style="text-align:right;">
+59.50
+</td>
+<td style="text-align:right;">
+66.90
+</td>
+<td style="text-align:right;">
+96.1
+</td>
+<td style="text-align:left;">
+▁▂▇▇▁
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+RD.SED.P
+</td>
+<td style="text-align:right;">
+27
+</td>
+<td style="text-align:right;">
+0.95
+</td>
+<td style="text-align:right;">
+90.55
+</td>
+<td style="text-align:right;">
+8.94
+</td>
+<td style="text-align:right;">
+7.7
+</td>
+<td style="text-align:right;">
+88.60
+</td>
+<td style="text-align:right;">
+93.30
+</td>
+<td style="text-align:right;">
+96.00
+</td>
+<td style="text-align:right;">
+100.0
+</td>
+<td style="text-align:left;">
+▁▁▁▁▇
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+RD.DBO.S
+</td>
+<td style="text-align:right;">
+40
+</td>
+<td style="text-align:right;">
+0.92
+</td>
+<td style="text-align:right;">
+83.45
+</td>
+<td style="text-align:right;">
+8.80
+</td>
+<td style="text-align:right;">
+8.2
+</td>
+<td style="text-align:right;">
+81.40
+</td>
+<td style="text-align:right;">
+85.40
+</td>
+<td style="text-align:right;">
+87.90
+</td>
+<td style="text-align:right;">
+94.7
+</td>
+<td style="text-align:left;">
+▁▁▁▁▇
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+RD.DQO.S
+</td>
+<td style="text-align:right;">
+26
+</td>
+<td style="text-align:right;">
+0.95
+</td>
+<td style="text-align:right;">
+67.82
+</td>
+<td style="text-align:right;">
+11.62
+</td>
+<td style="text-align:right;">
+1.4
+</td>
+<td style="text-align:right;">
+63.10
+</td>
+<td style="text-align:right;">
+69.90
+</td>
+<td style="text-align:right;">
+75.30
+</td>
+<td style="text-align:right;">
+96.8
+</td>
+<td style="text-align:left;">
+▁▁▂▇▂
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+RD.DBO.G
+</td>
+<td style="text-align:right;">
+36
+</td>
+<td style="text-align:right;">
+0.93
+</td>
+<td style="text-align:right;">
+89.01
+</td>
+<td style="text-align:right;">
+7.03
+</td>
+<td style="text-align:right;">
+19.6
+</td>
+<td style="text-align:right;">
+87.60
+</td>
+<td style="text-align:right;">
+90.20
+</td>
+<td style="text-align:right;">
+92.45
+</td>
+<td style="text-align:right;">
+97.0
+</td>
+<td style="text-align:left;">
+▁▁▁▁▇
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+RD.DQO.G
+</td>
+<td style="text-align:right;">
+25
+</td>
+<td style="text-align:right;">
+0.95
+</td>
+<td style="text-align:right;">
+77.86
+</td>
+<td style="text-align:right;">
+8.89
+</td>
+<td style="text-align:right;">
+19.2
+</td>
+<td style="text-align:right;">
+74.00
+</td>
+<td style="text-align:right;">
+79.15
+</td>
+<td style="text-align:right;">
+83.40
+</td>
+<td style="text-align:right;">
+98.1
+</td>
+<td style="text-align:left;">
+▁▁▁▇▅
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+RD.SS.G
+</td>
+<td style="text-align:right;">
+8
+</td>
+<td style="text-align:right;">
+0.98
+</td>
+<td style="text-align:right;">
+88.96
+</td>
+<td style="text-align:right;">
+8.22
+</td>
+<td style="text-align:right;">
+10.3
+</td>
+<td style="text-align:right;">
+87.60
+</td>
+<td style="text-align:right;">
+90.70
+</td>
+<td style="text-align:right;">
+93.10
+</td>
+<td style="text-align:right;">
+99.4
+</td>
+<td style="text-align:left;">
+▁▁▁▁▇
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+RD.SED.G
+</td>
+<td style="text-align:right;">
+31
+</td>
+<td style="text-align:right;">
+0.94
+</td>
+<td style="text-align:right;">
+99.09
+</td>
+<td style="text-align:right;">
+4.46
+</td>
+<td style="text-align:right;">
+36.4
+</td>
+<td style="text-align:right;">
+99.30
+</td>
+<td style="text-align:right;">
+99.70
+</td>
+<td style="text-align:right;">
+100.00
+</td>
+<td style="text-align:right;">
+100.0
+</td>
+<td style="text-align:left;">
+▁▁▁▁▇
+</td>
+</tr>
+</tbody>
+</table>
+<p>It is easy to see that the ranges of the variables are quite different, and the variances are large. In addition, many variables present missing values which need extra care. As discussed in the <em>Methods</em> Section, we impute the missing data by <span class="math inline">\(k\)</span>-nearest neighbors. In this way, we can take advantage of all the information in the data without possibly losing important observations when doing cluster analysis.</p>
+<pre class="r"><code>data.num &lt;- water.data %&gt;%
+  select(-1) %&gt;%   # remove day
+  as.data.frame()  # required by predict
+data.imputed &lt;- data.num %&gt;%
+  caret::preProcess(method=c(&quot;knnImpute&quot;)) %&gt;%
+  predict(as.data.frame(data.num)) %&gt;%
+  as_tibble()</code></pre>
+<p>Let us now check the relationships among the sets of numeric variables that quantify the same quantity (e.g., pH, sediments, suspended solid, etc.) at different stages of the plant (input, primary settler, secondary settler and global performance). From the pairwise comparisons plots and the correlation matrices, these variables do have large correlations, which may be problematic for the analysis.</p>
+<pre class="r"><code>corrmat &lt;- data.imputed %&gt;%
+  cor() %&gt;%
+  as_tibble(rownames = NA) %&gt;%
+  rownames_to_column()</code></pre>
+<div id="conductivity" class="section level3">
+<h3>Conductivity</h3>
+<pre class="r"><code>data.num %&gt;%
+  select(&quot;Plant&quot; = COND.E,
+         &quot;Primary Settler&quot; = COND.P,
+         &quot;Secondary Settler&quot; = COND.D,
+         &quot;Output&quot; = COND.S) %&gt;%
+  drop_na() %&gt;%
+  ggpairs(upper = list(continuous = wrap(bi_density_plot, palette = 1, size = 0.2))) +
+  ggtitle(label = &quot;Conductivity variables comparisons&quot;)</code></pre>
+<p><img src="/project/wastewater-plant/index_files/figure-html/unnamed-chunk-4-1.png" width="672" /></p>
+<pre class="r"><code>corrmat %&gt;%
+  select(rowname, starts_with(&quot;COND&quot;)) %&gt;%
+  slice(which(grepl(&quot;COND.&quot;, rowname))) %&gt;%
+  select(-rowname)</code></pre>
+<pre><code>## # A tibble: 4 x 4
+##   COND.E COND.P COND.D COND.S
+##    &lt;dbl&gt;  &lt;dbl&gt;  &lt;dbl&gt;  &lt;dbl&gt;
+## 1  1      0.973  0.940  0.907
+## 2  0.973  1      0.948  0.919
+## 3  0.940  0.948  1      0.951
+## 4  0.907  0.919  0.951  1</code></pre>
+</div>
+<div id="ph" class="section level3">
+<h3>PH</h3>
+<pre class="r"><code>data.num %&gt;%
+  select(&quot;Plant&quot; = PH.E,
+         &quot;Primary Settler&quot; = PH.P,
+         &quot;Secondary Settler&quot; = PH.D,
+         &quot;Output&quot; = PH.S) %&gt;%
+  drop_na() %&gt;%
+  ggpairs(upper = list(continuous = wrap(bi_density_plot, palette = 1, size = 0.2))) +
+  ggtitle(label = &quot;PH variables comparisons&quot;)</code></pre>
+<p><img src="/project/wastewater-plant/index_files/figure-html/unnamed-chunk-5-1.png" width="672" /></p>
+<pre class="r"><code>corrmat %&gt;%
+  select(rowname, starts_with(&quot;PH&quot;)) %&gt;%
+  slice(which(grepl(&quot;^\\PH.&quot;, rowname))) %&gt;%
+  select(-rowname)</code></pre>
+<pre><code>## # A tibble: 4 x 4
+##    PH.E  PH.P  PH.D  PH.S
+##   &lt;dbl&gt; &lt;dbl&gt; &lt;dbl&gt; &lt;dbl&gt;
+## 1 1     0.903 0.822 0.332
+## 2 0.903 1     0.895 0.383
+## 3 0.822 0.895 1     0.496
+## 4 0.332 0.383 0.496 1</code></pre>
+</div>
+<div id="volatile-suspended-solids" class="section level3">
+<h3>Volatile suspended solids</h3>
+<pre class="r"><code>data.num %&gt;%
+  select(&quot;Plant&quot; = SSV.E,
+         &quot;Primary Settler&quot; = SSV.P,
+         &quot;Secondary Settler&quot; = SSV.D,
+         &quot;Output&quot; = SSV.S) %&gt;%
+  drop_na() %&gt;%
+  ggpairs(upper = list(continuous = wrap(bi_density_plot, palette = 1, size = 0.2))) +
+  ggtitle(label = &quot;Volatile suspended solids variables comparisons&quot;)</code></pre>
+<p><img src="/project/wastewater-plant/index_files/figure-html/unnamed-chunk-6-1.png" width="672" /></p>
+<pre class="r"><code>corrmat %&gt;%
+  select(rowname, starts_with(&quot;SSV&quot;)) %&gt;%
+  slice(which(grepl(&quot;SSV&quot;, rowname))) %&gt;%
+  select(-rowname)</code></pre>
+<pre><code>## # A tibble: 4 x 4
+##   SSV.E SSV.P SSV.D SSV.S
+##   &lt;dbl&gt; &lt;dbl&gt; &lt;dbl&gt; &lt;dbl&gt;
+## 1 1     0.871 0.681 0.361
+## 2 0.871 1     0.692 0.346
+## 3 0.681 0.692 1     0.463
+## 4 0.361 0.346 0.463 1</code></pre>
+</div>
+<div id="suspended-solids" class="section level3">
+<h3>Suspended solids</h3>
+<pre class="r"><code>data.num %&gt;%
+  select(&quot;Plant&quot; = SS.E,
+         &quot;Primary Settler&quot; = SS.P,
+         &quot;Secondary Settler&quot; = SS.D,
+         &quot;Output&quot; = SS.S) %&gt;%
+  drop_na() %&gt;%
+  ggpairs(upper = list(continuous = wrap(bi_density_plot, palette = 1, size = 0.2))) +
+  ggtitle(label = &quot;Suspended solids variables comparisons&quot;)</code></pre>
+<p><img src="/project/wastewater-plant/index_files/figure-html/unnamed-chunk-7-1.png" width="672" /></p>
+<pre class="r"><code>corrmat %&gt;%
+  select(rowname, starts_with(&quot;SS.&quot;)) %&gt;%
+  slice(which(grepl(&quot;^\\SS.[A-Z]&quot;, rowname))) %&gt;%
+  select(-rowname)</code></pre>
+<pre><code>## # A tibble: 4 x 4
+##      SS.E    SS.P  SS.D     SS.S
+##     &lt;dbl&gt;   &lt;dbl&gt; &lt;dbl&gt;    &lt;dbl&gt;
+## 1 1        0.877  0.205  0.00713
+## 2 0.877    1      0.290 -0.0233 
+## 3 0.205    0.290  1      0.121  
+## 4 0.00713 -0.0233 0.121  1</code></pre>
+</div>
+<div id="biological-oxygen-demand" class="section level3">
+<h3>Biological Oxygen demand</h3>
+<pre class="r"><code>data.num %&gt;%
+  select(&quot;Plant&quot; = DBO.E,
+         &quot;Primary Settler&quot; = DBO.P,
+         &quot;Secondary Settler&quot; = DBO.D,
+         &quot;Output&quot; = DBO.S) %&gt;%
+  drop_na() %&gt;%
+  ggpairs(upper = list(continuous = wrap(bi_density_plot, palette = 1, size = 0.2))) +
+  ggtitle(label = &quot;Biological Oxygen demand variables comparisons&quot;)</code></pre>
+<p><img src="/project/wastewater-plant/index_files/figure-html/unnamed-chunk-8-1.png" width="672" /></p>
+<pre class="r"><code>corrmat %&gt;%
+  select(rowname, starts_with(&quot;DBO&quot;)) %&gt;%
+  slice(which(grepl(&quot;^\\DBO.&quot;, rowname))) %&gt;%
+  select(-rowname)</code></pre>
+<pre><code>## # A tibble: 4 x 4
+##   DBO.E  DBO.P DBO.D  DBO.S
+##   &lt;dbl&gt;  &lt;dbl&gt; &lt;dbl&gt;  &lt;dbl&gt;
+## 1 1     0.728  0.625 0.142 
+## 2 0.728 1      0.650 0.0781
+## 3 0.625 0.650  1     0.186 
+## 4 0.142 0.0781 0.186 1</code></pre>
+</div>
+<div id="chemical-oxygen-demand" class="section level3">
+<h3>Chemical Oxygen demand</h3>
+<pre class="r"><code>data.num %&gt;%
+  select(&quot;Plant&quot; = DQO.E,
+         &quot;Secondary Settler&quot; = DQO.D,
+         &quot;Output&quot; = DQO.S) %&gt;%
+  drop_na() %&gt;%
+  ggpairs(upper = list(continuous = wrap(bi_density_plot, palette = 1, size = 0.2))) +
+  ggtitle(label = &quot;Chemical Oxygen demand variables comparisons&quot;)</code></pre>
+<p><img src="/project/wastewater-plant/index_files/figure-html/unnamed-chunk-9-1.png" width="672" /></p>
+<pre class="r"><code>corrmat %&gt;%
+  select(rowname, starts_with(&quot;DQO&quot;)) %&gt;%
+  slice(which(grepl(&quot;^\\DQO.&quot;, rowname))) %&gt;%
+  select(-rowname)</code></pre>
+<pre><code>## # A tibble: 3 x 3
+##   DQO.E DQO.D DQO.S
+##   &lt;dbl&gt; &lt;dbl&gt; &lt;dbl&gt;
+## 1 1     0.647 0.319
+## 2 0.647 1     0.462
+## 3 0.319 0.462 1</code></pre>
+</div>
+<div id="sediments" class="section level3">
+<h3>Sediments</h3>
+<pre class="r"><code>data.num %&gt;%
+  select(&quot;Plant&quot; = SED.E,
+         &quot;Primary Settler&quot; = SED.P,
+         &quot;Secondary Settler&quot; = SED.D,
+         &quot;Output&quot; = SED.S) %&gt;%
+  drop_na() %&gt;%
+  ggpairs(upper = list(continuous = wrap(bi_density_plot, palette = 1, size = 0.2))) +
+  ggtitle(label = &quot;Sediments variables comparisons&quot;)</code></pre>
+<p><img src="/project/wastewater-plant/index_files/figure-html/unnamed-chunk-10-1.png" width="672" /></p>
+<pre class="r"><code>corrmat %&gt;%
+  select(rowname, starts_with(&quot;SED&quot;)) %&gt;%
+  slice(which(grepl(&quot;^\\SED.&quot;, rowname))) %&gt;%
+  select(-rowname)</code></pre>
+<pre><code>## # A tibble: 4 x 4
+##    SED.E    SED.P  SED.D    SED.S
+##    &lt;dbl&gt;    &lt;dbl&gt;  &lt;dbl&gt;    &lt;dbl&gt;
+## 1 1       0.855   0.152   0.0102 
+## 2 0.855   1       0.139  -0.00100
+## 3 0.152   0.139   1       0.0329 
+## 4 0.0102 -0.00100 0.0329  1</code></pre>
+</div>
+</div>
+<div id="section" class="section level2 unnumbered">
+<h2></h2>
+<p>Let us have a look at the distribution of the variables through histograms. The black line corresponds to a kernel density estimate, whereas the blue one is the normal density with the same parameters. Many variables are highly skewed or show a non-normal behaviour. e of the performance and global performance variables.</p>
+<pre class="r"><code>p1 &lt;- data.imputed %&gt;%
+  histogram_density(aes(ZN.E), mean = mean(.$ZN.E), sd = sd(.$ZN.E),
+                    title = &quot;Zinc at Plant&quot;)
+
+p2 &lt;- data.imputed %&gt;%
+  histogram_density(aes(SED.E), mean = mean(.$SED.E), sd = sd(.$SED.E),
+                    title = &quot;Sediments at Plant&quot;)
+
+p3 &lt;- data.imputed %&gt;%
+  histogram_density(aes(RD.DBO.S), mean = mean(.$RD.DBO.S), sd = sd(.$RD.DBO.S),
+                    title = &quot;Biological Oxygen Demand at Secondary Settler&quot;)
+
+ggarrange(p1, p2, p3, nrow = 1)</code></pre>
+<p><img src="/project/wastewater-plant/index_files/figure-html/unnamed-chunk-11-1.png" width="600" height="100" /></p>
+<p>To solve the issue, we can apply a Box Cox transformation was applied to the data. For the majority of the transformed variables there were visible signs of improvement in normality. Most of the variables that remained skewed were some of the performance and global performance variables. For meaningful comparisons, we also center and scale the data.</p>
+<pre class="r"><code># Box Cox transformation, centering, scaling
+data.prep &lt;- as.data.frame(data.imputed) %&gt;%
+  caret::preProcess(method=c(&quot;BoxCox&quot;, &quot;center&quot;,&quot;scale&quot;)) %&gt;%
+  predict(as.data.frame(data.imputed)) %&gt;%
+  as_tibble()</code></pre>
+</div>
+<div id="cluster-analysis" class="section level2">
+<h2>Cluster Analysis</h2>
+<p>Let’s use some cluster analysis to addres the issue of classifying the operational states of the wastewater treatment plant.</p>
+<p>We started with <strong>hierarchical clustering</strong> and the Euclidean distance as a measure of dissimilarity between units. We tried several linkage methods, including single linkage, complete linkage, average likage, centroid linkage and Ward’s method.</p>
+<p>In single, average and centroid linkage, the obtained partition was not a real partition because it consisted of a huge cluster including almost all the observations (525 out of 527) and two singletons corresponding to the malfunctioning days 11 and 149. With complete linkage we got a very similar result because 522 observations were clustered together and the remaining 5 formed two clusters of sizes one and four. The singleton was again observation 11, while in the other cluster 3 out of the 4 units corresponded to malfunctioning days 79, 396 and 399.</p>
+<p>The only technique that gave a “standard” partition was the Ward’s method, because the three clusters had sizes equal to 114, 330 and 83 respectively. This will be the partition we will use in the following to evaluate hierarchical clustering. As we can see from the dendrogram, the initial choice of three clusters appears reasonable.</p>
+<pre class="r"><code>eu.distance &lt;- data.prep %&gt;%
+  dist(method = &quot;euclidean&quot;)
+
+hclust &lt;- eu.distance %&gt;%
+  hclust(method = &quot;ward.D&quot;)
+
+hclust %&gt;%
+  plot(xlab=&quot;Ward&#39;s Method - Euclidean distance&quot;, sub=&quot;&quot;)</code></pre>
+<p><img src="/project/wastewater-plant/index_files/figure-html/unnamed-chunk-13-1.png" width="672" /></p>
+<pre class="r"><code>hclust.labels &lt;- hclust %&gt;%
+  cutree(k = 3)</code></pre>
+<p>We then tried <strong>partitioning clustering</strong> using the k-means algorithm and the R function kmeans. Different values of <span class="math inline">\(k\)</span> (<span class="math inline">\(k= 2, 3, 4\)</span>) were tried, but again no satisfactory separation was obtained. Even if the clusters detected had similar sizes, they tended to overlap without highlighting any particular pattern.
+We plotted the elbow graph which gives information about how many clusters are necessary to explain the total variation of the data. However it does not give a clear suggestion on the number of clusters, because the curve decreases smoothly. Three or four clusters seems to be a good solution.</p>
+<pre class="r"><code>kmeans &lt;- data.prep %&gt;%
+  multiKmeans(50, 500)
+
+kmeans %&gt;%
+  getElement(&quot;css&quot;) %&gt;%
+  elbowGraph()</code></pre>
+<p><img src="/project/wastewater-plant/index_files/figure-html/unnamed-chunk-14-1.png" width="600" /></p>
+<p>The point cloud was successively plotted against the first two principal components for respectively 3 and 4 clusters. By running several times the code for the division in 4 clusters, we noticed that sometimes only two data points were clustered in the fourth group, so the decision was to work with the partition based on three centers, which seemed to give a more stable result.</p>
+<p>In the partition in three clusters, the first cluster of 160 units contained 4 faults, the second one of size 163 included 2 faults and in the remaining one of size 204 eight malfunctioning days were present. There is hence no evidence of a small cluster containing at least the majority of the faulty observations.</p>
+<pre class="r"><code>plot.kmeans2  &lt;- function(x, data = NULL, class = NULL,
+                          legend.position = c(&quot;right&quot;, &quot;bottom&quot;, &quot;left&quot;, &quot;top&quot;, &quot;none&quot;),
+                          title = &quot;K-Means Results&quot;,
+                          xlab = &quot;Principal Component 1&quot;, ylab = &quot;Principal Component 2&quot;,
+                          ...) {
+  require(useful)
+  toPlot &lt;- fortify(model = x, data = data)
+  legend.position &lt;- match.arg(legend.position)
+  ggplot(toPlot, aes(x = .x, y = .y, colour = .Cluster, label= .Cluster)) +
+    geom_point(aes_string(shape = class)) +
+    scale_color_discrete(&quot;Cluster&quot;) +
+    theme(legend.position = legend.position) +
+    labs(title = title, x = xlab, y = ylab) +
+    geom_text(size=3,hjust=-0.5, vjust=0) +
+    theme_light()
+}
+
+cl$cluster[[3]] %&gt;%
+  plot.kmeans2(data = data.prep)</code></pre>
+<p><img src="/project/wastewater-plant/index_files/figure-html/unnamed-chunk-16-1.png" width="600" /></p>
+<p>In order to evaluate whether the division in clusters is more meaningful than a simple random partition of the data, we computed the average silhouette width and the adjusted Rand Index to assess the quality of clustering were used.</p>
+<p>As we can see from the table below and the silhouette plots, the average silhouette width for hierarchical clustering was 0.09, while for k-means clustering it was equal to 0.1. These values close to 0 mean that both the partitions seemed to be simply random with units separated not according some real criteria and each clustering method tended to create its own random clusters.</p>
+<table>
+<thead>
+<tr class="header">
+<th>Classification</th>
+<th>ASW</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Hierarchical</td>
+<td>0.09</td>
+</tr>
+<tr class="even">
+<td>K-means</td>
+<td>0.10</td>
+</tr>
+<tr class="odd">
+<td>Gaussian model-based</td>
+<td>0.22</td>
+</tr>
+<tr class="even">
+<td>Skew-normal model-based</td>
+<td>0.21</td>
+</tr>
+<tr class="odd">
+<td>Modal</td>
+<td>0.62</td>
+</tr>
+<tr class="even">
+<td>Linneo+</td>
+<td>0.44</td>
+</tr>
+</tbody>
+</table>
+<p>The classification provided by the software Linneo+ divided the units in 13 classes, many of them composed only by a single element. We merged those classes together so that we ended up with only two classes: one containing the observations when the plant was correctly functioning and the other containing the faulty days. The silhouette value for this partition was 0.44, which was still a non-satisfactory result.</p>
+<p>In order to evaluate coherence between the partition obtained by Ward’s and <span class="math inline">\(k\)</span>-means algorithms the adjusted Rand Index between the two partitions was computed. We compared all the possible pairs of optimal partitions; of course, the characteristics of the optimal partition (for example, the number of clusters) can change depending on the clustering method.</p>
+<p>For hierarchical clustering the best partition seemed to occur when the dendrogram was cut at level 3; we hence considered the partition in three clusters. For <span class="math inline">\(k\)</span>-means clustering we considered as well the partition in 3 clusters, which appeared to be more stable, rather than the one in 4 clusters. Their adjusted Rand index was 0.213, pointing out the lack of a clear group structure.</p>
+<pre class="r"><code>cols &lt;- carto_pal(n = 10, name = &quot;Pastel&quot;)[1:3]
+plot(si.h, col = cols, main = &quot;Hierarchical Clustering&quot;)
+plot(si.k, col = cols, main = &quot;K-means Clustering&quot;)
+plot(si.mb, col = cols[1:2], main = &quot;Gaussian Model-based Clustering&quot;)
+plot(sil.skew, col = cols[1:2], main = &quot;Skew-normal Model-based Clustering&quot;)
+plot(si.l, col = cols[1:2], main = &quot;Linneo+ Classification&quot;)</code></pre>
+<center>
+<img style="width: 800px;" src="Figures/silhouette.png">
+</center>
+<p><br></p>
+<table>
+<thead>
+<tr class="header">
+<th>Hierarchical</th>
+<th>K-means</th>
+<th>Gaussian</th>
+<th>Skew-normal</th>
+<th>Modal</th>
+<th>Linneo+</th>
+<th>Method</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>1</td>
+<td>0.213</td>
+<td>0.031</td>
+<td>0.034</td>
+<td>0.042</td>
+<td>0.008</td>
+<td>Hierarchical</td>
+</tr>
+<tr class="even">
+<td></td>
+<td>1</td>
+<td>0.001</td>
+<td>-0.003</td>
+<td>-0.003</td>
+<td>-0.002</td>
+<td>K-means</td>
+</tr>
+<tr class="odd">
+<td></td>
+<td></td>
+<td>1</td>
+<td>0.766</td>
+<td>0.162</td>
+<td>0.088</td>
+<td>Gaussian</td>
+</tr>
+<tr class="even">
+<td></td>
+<td></td>
+<td></td>
+<td>1</td>
+<td>0.157</td>
+<td>0.085</td>
+<td>Skew-normal</td>
+</tr>
+<tr class="odd">
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td>1</td>
+<td>0.477</td>
+<td>Modal</td>
+</tr>
+<tr class="even">
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td>1</td>
+<td>Linneo+</td>
+</tr>
+</tbody>
+</table>
+<p>In conclusion, neither hierarchical nor k-means clustering managed to perform a good clustering or to identify the totality of faults. The clusters they found were produced by the clustering algorithm and were not inherent in the data.</p>
+<p>Both k-means and Ward’s method assumed spherical clusters. Their bad performances might be due to the presence of non-spherical clusters instead. In order to look for elliptical or even skew clusters we resorted to model-based clustering with Gaussian and skew-normal components and to modal clustering.</p>
+<p>Model-based clustering has been applied to the raw imputed data. Therefore variables were neither transformed, nor standardized. The reason is that if we made the data marginally normal, we would prevent the algorithm, who actually modelled according to a mixture to work in the way it was created for.</p>
+<p>We now fit a Gaussian mixture model. The number of groups was allowed to vary from 2 to 5 and the covariance matrix could take different forms. According to the BIC criterion the optimal model was an ellipsoidal, equal shape model with 2 components: 426 observations lay in the first cluster and the remaining 101 in the second one.</p>
+<pre class="r"><code>gaussian.mb &lt;- data.imputed %&gt;%
+  mclust::Mclust(G = 2:5)
+
+guassian.labels &lt;- gaussian.mb$classification</code></pre>
+<table>
+<thead>
+<tr class="header">
+<th>Optimal model</th>
+<th></th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>N. of components</td>
+<td>2</td>
+</tr>
+<tr class="even">
+<td>Distribution</td>
+<td>Ellipsoidal</td>
+</tr>
+<tr class="odd">
+<td>Volume</td>
+<td>Variable</td>
+</tr>
+<tr class="even">
+<td>Shape</td>
+<td>Equal</td>
+</tr>
+<tr class="odd">
+<td>Orientation</td>
+<td>Variable</td>
+</tr>
+<tr class="even">
+<td>Log-likelihood</td>
+<td>-7449.47</td>
+</tr>
+<tr class="odd">
+<td>BIC</td>
+<td>24437.61</td>
+</tr>
+<tr class="even">
+<td>Cluster sizes</td>
+<td>426 101</td>
+</tr>
+<tr class="odd">
+<td>Mixing proportions</td>
+<td>0.808 0.192</td>
+</tr>
+</tbody>
+</table>
+<p>Observations were subsequently labelled according this classification, but the visualization of the results did not make us see a clear distinction in two clusters.</p>
+<p>Might assuming non-elliptical clusters improve the classification results?</p>
+<p>We then performed skew-normal mixture model-based clustering. Both multivariate skew-normal models with 2 and 3 components were fitted to the data, but as the former had a much lower BIC value (and AIC as well) than the latter, the decision was to work with the 2-component model, which is also a sensible choice, given that we aim at finding the faults of the plant as opposed to the days in which the plant worked well.</p>
+<pre class="r"><code>set.seed(1)
+skew.mb &lt;- data.imputed %&gt;%
+  EMMIXskew::EmSkew(2, distr = &quot;msn&quot;, itmax = 1000,
+                    epsilon = 1e-6, nkmeans = 20, nrandom = 100)
+
+skew.labels &lt;- skew.mb$clust</code></pre>
+<table>
+<thead>
+<tr class="header">
+<th>Multivariate skew normal distribution</th>
+<th>2-component model</th>
+<th>3-component model</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Log likelihood</td>
+<td>-7275.22</td>
+<td>-6.523.272</td>
+</tr>
+<tr class="even">
+<td>BIC</td>
+<td>24797.31</td>
+<td>28419.99</td>
+</tr>
+<tr class="odd">
+<td>AIC</td>
+<td>17820.44</td>
+<td>17952.54</td>
+</tr>
+<tr class="even">
+<td>Mixing proportions</td>
+<td>0.804 0.196</td>
+<td>0.165 0.734 0.101</td>
+</tr>
+</tbody>
+</table>
+<p>The proportions of the 2 components in the 2-component model were rather stable and they were approximately 0.8 and 0.2. As in mixture model-based clustering the components are associated with clusters, the pattern seems to be clearer now: we have a very big cluster and a smaller one.</p>
+<p>After setting, different parameterizations for the parameters nrandom (10-default, 20, 30, 40, 50 and then 100) and nkmeans (0-default, 10 and 20) of the function Emskew were tried to access whether and
+how the BIC changed. By increasing the value of random partitions used to find the best initial values, the BIC decreased; in particular, the lowest BIC occurred when nrandom=100 and nkmeans=20, i.e. when 100 random partitions and 20 k-means partitions were tried to find the best initial values.</p>
+<p>We then wanted to evaluate the quality of the clustering results obtained with model-based
+clustering. The optimal partition (in terms of BIC) for both mixtures had 2 components and the
+corresponding average silhouette width values were very close and very small: 0.22 for Gaussian
+model-based clustering and 0.21 for skew-normal model-based clustering.</p>
+<p>On the other hand, their adjusted Rand Index was quite high (ARI=0.766), meaning that approximately the 77% of the maximum expected agreement occurred between the two partitions. The Rand indexes comparing model-based clustering with Ward’s method, k-means clustering and Linneo+ classification were, however, very small.</p>
+<p>It can be of interest studying in details the characteristics of the clusters obtained with Gaussian
+and with skew-normal mixtures and seeing not only how many faults they manage to cluster
+together but also which variables behave differently in the two clusters.</p>
+<p>Thanks to the Linneo+ classification, we knew when the faults of the plant occurred and so we
+took advantage of this information for determining how many faults the two model-based
+clustering methods succeed in identifying. With Gaussian mixtures, 9 faults out of 14 were present in the small cluster, and they corresponded to days 11, 12, 79, 149, 187, 293, 396, 399 and 402.
+For skew-normal model-based clustering the identification of the number of detected faults
+changed depending on the values given for the parameters of the function Emskew.</p>
+<center>
+<img style="width: 800px;" src="Figures/mbclustering.png">
+</center>
+<p><br></p>
+<p>By increasing the value of random partitions that were used to find the best initial
+values, the number of malfunctioning days detected increased, but only of a single unit. The
+maximum number of malfunctioning days that were present in the small cluster was 9 out of 14.
+Even in the mixing proportions of the two clusters the change was slight. The 9 faults detected were exactly the same with both mixture components. This suggests that the skew-normal mixtures might be not very skew and they may resemble normal distributions.</p>
+<p><strong>Variable Selection</strong>
+<br>
+The following step in the analysis was checking which variables behaved differently in the two identified clusters and therefore the absolute value of the difference of the mean values for each variable in both clusters was computed. Then the ten highest differences (out of the 38 present) were picked and we looked at which variables these differences corresponded to (Table A-2 in the Appendix).</p>
+<p>With Gaussian mixtures, the 10 highest differences corresponded to variables SS.E, SSV.E, SS.P, SSV.P, SS.D, SSV.D, SED.D, RD.DBO.S, RD.SED.P and RD.SED.G, which actually quantified the amount of only the following substances:</p>
+<ul>
+<li>Suspended solids at plant and at primary and secondary settler;</li>
+<li>Volatile suspended solids at plant, at primary and secondary settler;</li>
+<li>Sediments at secondary settler and input performance and global input performance;</li>
+<li>Input performance of biological oxygen demand at secondary settler.</li>
+</ul>
+<p>For skew-normal mixture model-based clustering, we considered the partition obtained for nrandom=100 and nkmeans=20, which was the one with the lowest BIC. We repeated the same selection procedure as before and the ten variables for which the absolute differences between the mean values were higher were SS.E, SSV.E, SS.P, SSV.P, DQO.D, SSV.D, SS.S, SSV.S, RD.SS.P and RD.DBO.S. They indicated:</p>
+<ul>
+<li>Suspended solids at plant, primary settler, in output and the corresponding input performance variable;</li>
+<li>Volatile suspended solids at all the stages of the plant;</li>
+<li>Chemical oxygen demand at secondary settler;</li>
+<li>Input performance of biological and chemical oxygen demand.</li>
+</ul>
+<p>In both cases, in the small cluster there was a higher mean value of suspended solids and sediments and a lower mean value of volatile suspended solids and a lower performance of biological and chemical oxygen demand.</p>
+<p>Both methods therefore selected the same variables, with only one exception: skew-normal components identified as significant the variables measuring the chemical oxygen demand and not the sediments.
+We can hence say that the two types of mixture model-based clustering agreed in the choice of variables that behave differently in the two clusters.</p>
+<p><strong>Posterior probabilities of the faults</strong></p>
+<p>A further step of the analysis was looking at the posterior probabilities of the days in which the faults occurred and working out how central they were.</p>
+<p>The following tables show the posterior probabilities of the observations in the malfunctioning days in the clusters detected using Gaussian components and skew-normal mixtures. The last column of the tables indicates whether the faults were allocated in the small cluster or not.</p>
+<p>We had already realized that both model-based clustering methods behaved in a similar manner; now we can see that also their corresponding posterior probabilities are quite similar. As we can see, there are some units that would never fall in the small cluster, because their posterior probabilities of belonging to the big group are much higher.</p>
+<p>Again, we noticed that all posterior probabilities were almost always either 0 or 1 or, anyway, they were always well separated. This means that the 14 malfunctioning days were always unambiguously allocated to one of the two clusters.</p>
+<p>To sum up, for some faulty observations there was certainty of allocation to the small group, while for others there was strong evidence of not belonging to the small group.</p>
+<table>
+<thead>
+<tr class="header">
+<th>Gaussian mixtures</th>
+<th>Skew-normal mixtures</th>
+<th></th>
+<th></th>
+<th></th>
+<th></th>
+<th></th>
+<th></th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Fault</td>
+<td>Small</td>
+<td>Big</td>
+<td>Allocated in small?</td>
+<td>Fault</td>
+<td>Small</td>
+<td>Big</td>
+<td>Allocated in small?</td>
+</tr>
+<tr class="even">
+<td>11</td>
+<td>1</td>
+<td>0</td>
+<td>Yes</td>
+<td>11</td>
+<td>1</td>
+<td>0</td>
+<td>Yes</td>
+</tr>
+<tr class="odd">
+<td>12</td>
+<td>1.00E+00</td>
+<td>1.16E-15</td>
+<td>Yes</td>
+<td>12</td>
+<td>1.00E+00</td>
+<td>2.77E-17</td>
+<td>Yes</td>
+</tr>
+<tr class="even">
+<td>13</td>
+<td>1.44E-09</td>
+<td>1.00E+00</td>
+<td>No</td>
+<td>13</td>
+<td>1.88E-32</td>
+<td>1.00E+00</td>
+<td>No</td>
+</tr>
+<tr class="odd">
+<td>79</td>
+<td>1</td>
+<td>0</td>
+<td>Yes</td>
+<td>79</td>
+<td>1</td>
+<td>0</td>
+<td>Yes</td>
+</tr>
+<tr class="even">
+<td>149</td>
+<td>1</td>
+<td>0</td>
+<td>Yes</td>
+<td>149</td>
+<td>1</td>
+<td>0</td>
+<td>Yes</td>
+</tr>
+<tr class="odd">
+<td>187</td>
+<td>1.00E+00</td>
+<td>2.23E-55</td>
+<td>Yes</td>
+<td>187</td>
+<td>1.00E+00</td>
+<td>2.90E-77</td>
+<td>Yes</td>
+</tr>
+<tr class="even">
+<td>210</td>
+<td>3.89E-10</td>
+<td>1.00E+00</td>
+<td>No</td>
+<td>210</td>
+<td>5.19E-32</td>
+<td>1.00E+00</td>
+<td>No</td>
+</tr>
+<tr class="odd">
+<td>293</td>
+<td>1</td>
+<td>0</td>
+<td>Yes</td>
+<td>293</td>
+<td>1</td>
+<td>0</td>
+<td>Yes</td>
+</tr>
+<tr class="even">
+<td>396</td>
+<td>1</td>
+<td>0</td>
+<td>Yes</td>
+<td>396</td>
+<td>1</td>
+<td>0</td>
+<td>Yes</td>
+</tr>
+<tr class="odd">
+<td>399</td>
+<td>1</td>
+<td>0</td>
+<td>Yes</td>
+<td>399</td>
+<td>1</td>
+<td>0</td>
+<td>Yes</td>
+</tr>
+<tr class="even">
+<td>402</td>
+<td>1.00E+00</td>
+<td>1.03E-34</td>
+<td>Yes</td>
+<td>402</td>
+<td>1.00E+00</td>
+<td>1.27E-39</td>
+<td>Yes</td>
+</tr>
+<tr class="odd">
+<td>442</td>
+<td>2.85E-14</td>
+<td>1.00E+00</td>
+<td>No</td>
+<td>442</td>
+<td>4.06E-10</td>
+<td>1.00E+00</td>
+<td>No</td>
+</tr>
+<tr class="even">
+<td>443</td>
+<td>1.93E-13</td>
+<td>1.00E+00</td>
+<td>No</td>
+<td>443</td>
+<td>4.78E-12</td>
+<td>1.00E+00</td>
+<td>No</td>
+</tr>
+<tr class="odd">
+<td>444</td>
+<td>1.58E-16</td>
+<td>1.00E+00</td>
+<td>No</td>
+<td>444</td>
+<td>3.68E-14</td>
+<td>1.00E+00</td>
+<td>No</td>
+</tr>
+</tbody>
+</table>
+<p>In conclusion, considering that both types of mixtures detected the same clusters, they identified almost the same variables and their posterior probabilities were quite similar, we can say that the two methods in this dataset performed almost in the same way.</p>
+<p>This similarity of results is effectively due to the fact that the skew-normal fitted to the data had actually very low levels of skewness and therefore they resembled Gaussian distributions. We studied in fact the asymmetry of the marginal distributions of the skew-normal mixtures: the highest value obtained was 0.178, which is very small, considered that the maximum value of skewness for a skew-normal variable is 0.995.</p>
+<p>Skew-normal mixtures, even if more flexible, were however more unstable because of the large amount of parameters to estimate (not only the mean vector and the variance-covariance matrix, as Gaussian mixtures, but also the vector <span class="math inline">\(\boldsymbol \delta\)</span> of asymmetries). On the contrary, model-based clustering with Gaussian components, thanks to the simplifying assumptions on the form of the covariance matrix, was more stable.</p>
+</div>
+<div id="hierarchical-modal-clustering" class="section level2">
+<h2>Hierarchical Modal Clustering</h2>
+<p>In order to work in a much more flexible framework than the semi-parametric method of skew-normal mixture model-based clustering, we applied a non-parametric clustering method, called modal clustering.</p>
+<p>To be able to cut the tree at the desired level, we specified as smoothing levels of the parameter sigma a sequence of values from 2 to 6 by 0.2. Twenty one levels were identified and the decision was to cut the dendrogram to get only 3 clusters (this occurred at level 10).</p>
+<pre class="r"><code>hmodal &lt;- data.prep %&gt;%
+  Modalclust::phmac(npart = 1, sigmas = seq(2, 6, by = 0.2))</code></pre>
+<pre><code>## Multicore processing not implemented in Windows version
+## Performing initial Modal clustering..........
+## Building hierarchical Modal clusters at 
+## level  1 ...level  2 ...level  3 ...level  4 ...level  5 ...
+## level  6 ...level  7 ...level  8 ...level  9 ...level  10 ...level  11 ...level  12 ...level  13 ...level  14 ...level  15 ...level  16 ...level  17 ...level  18 ...level  19 ...level  20 ...level  21 ...</code></pre>
+<pre class="r"><code>plot(hmodal)</code></pre>
+<p><img src="/project/wastewater-plant/index_files/figure-html/unnamed-chunk-20-1.png" width="672" /></p>
+<pre class="r"><code># hmodal.cut &lt;- hmodal %&gt;%
+#  Modalclust::hard.hmac(n.cluster=3, plot=FALSE)</code></pre>
+<p>However, this partition was not a “real” partition because, as in single linkage, we got a huge cluster and two singletons, which corresponded to faults in days 11 and 149. The table below shows the singletons obtained by cutting the dendrogram at lower levels and green numbers represent malfunctioning days. For example, at level 4, 7 of the 11 detected singletons were defective observations. We did not show in the table the partition at level 3 and 2 because the new singletons obtained did not contain new malfunctioning days.</p>
+<center>
+<img style="width: 600px;" src="Figures/modal.png">
+</center>
+<p><br></p>
+<p>The average silhouette width for the partition in 3 clusters was quite high (0.62) but the reason is that the provided partition was only induced by the algorithm. As far as the Adjusted Rand Index is concerned, the highest value (ARI=0.477, Table 3.5) occurred when comparing this partition to the Linneo+ classification, pointing out that there was approximately the 48% of the maximum expected agreement between the two partitions.</p>
+</div>
+<div id="hidden-markov-models" class="section level2">
+<h2>Hidden Markov Models</h2>
+<p>We tried to improve the classification by incorporating in the clustering algorithms the dependence between the observations: the dataset was in fact the realization of a multivariate time series of 527 daily observations. Cluster analysis implicitly assumed that the data were independent, while we did have dependent observations and this might be one of the reasons why it was so difficult for the algorithms to detect and find clusters in the data. For each variable in the dataset we thus have a time series.</p>
+<p>Gaussian hidden Markov models were used to discover possible patterns inside the time series. There are very few R packages that fit dependent mixture models to multivariate time series and also the one used in the analysis (depmixS4, with the corresponding functions depmix and fit) had some limitations when the number of variables became large. The decision was thus to fit a bivariate hidden Markov model by using the first two principal components, even if they explained only approximately 36% of the variation present in the data.</p>
+<p>Gaussian distributions were used for both variables. The initial state probabilities were 0 for state 1 and 1 for state 2, meaning that state 2 was the starting state for the process, with a negligible probability of starting at state 1. From the transition matrix (see table below) there was evidence that the first state was rather unstable, because the probability of moving to the other state was higher than the one of remaining in the same state. On the contrary, the second state was very stable, because the probability of leaving that state was very small and close to 0 (0.041). A possible guess was hence that the second state contained the operational days, while the first one the malfunctioning ones.</p>
+<table>
+<thead>
+<tr class="header">
+<th></th>
+<th>To S1</th>
+<th>To S2</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>From S1</td>
+<td>0.414</td>
+<td>0.586</td>
+</tr>
+<tr class="even">
+<td>From S2</td>
+<td>0.041</td>
+<td>0.959</td>
+</tr>
+</tbody>
+</table>
+<p>The faults were also rather sparse in the dataset, meaning that there was an overall tendency that after a malfunctioning day there followed an operational day. Another thing we noticed was that the first state was very variable (its standard deviation is equal to 7.66) with respect to the second response. Because of this, the two states, although they were well separated with respect to mean values, were unfortunately much overlapped with respect to the second principal component.</p>
+<table>
+<thead>
+<tr class="header">
+<th>Response 1</th>
+<th>Intercept</th>
+<th>sd</th>
+<th>Response 2</th>
+<th>Intercept</th>
+<th>sd</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>State 1</td>
+<td>0.752</td>
+<td>2.345</td>
+<td>State 1</td>
+<td>-1.486</td>
+<td>7.66</td>
+</tr>
+<tr class="even">
+<td>State 2</td>
+<td>-0.053</td>
+<td>2.729</td>
+<td>State 2</td>
+<td>0.105</td>
+<td>1.589</td>
+</tr>
+</tbody>
+</table>
+<p>As we did before with model-based clustering, we then looked at the posterior probabilities of the days in which the faults occurred. For HHM no classification of the units in the two states was available from the depmixS4 package, and therefore the classification was done manually by allocating a unit to the cluster for which the posterior probability of that unit belonging to that cluster was higher.</p>
+<table>
+<thead>
+<tr class="header">
+<th>Hidden Markov Model</th>
+<th></th>
+<th></th>
+<th></th>
+<th></th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Fault</td>
+<td>State</td>
+<td>State 1</td>
+<td>State 2</td>
+<td>Allocated in state 1?</td>
+</tr>
+<tr class="even">
+<td>11</td>
+<td>1</td>
+<td>1</td>
+<td>9.62E-87</td>
+<td>Yes</td>
+</tr>
+<tr class="odd">
+<td>12</td>
+<td>1</td>
+<td>0.702</td>
+<td>2.98E-01</td>
+<td>Yes</td>
+</tr>
+<tr class="even">
+<td>13</td>
+<td>2</td>
+<td>0.424</td>
+<td>5.76E-01</td>
+<td>No</td>
+</tr>
+<tr class="odd">
+<td>79</td>
+<td>1</td>
+<td>0.996</td>
+<td>3.95E-03</td>
+<td>Yes</td>
+</tr>
+<tr class="even">
+<td>149</td>
+<td>1</td>
+<td>1</td>
+<td>1.08E-20</td>
+<td>Yes</td>
+</tr>
+<tr class="odd">
+<td>187</td>
+<td>1</td>
+<td>0.375</td>
+<td>6.25E-01</td>
+<td>No</td>
+</tr>
+<tr class="even">
+<td>210</td>
+<td>2</td>
+<td>0.165</td>
+<td>8.35E-01</td>
+<td>No</td>
+</tr>
+<tr class="odd">
+<td>293</td>
+<td>1</td>
+<td>0.999</td>
+<td>5.87E-04</td>
+<td>Yes</td>
+</tr>
+<tr class="even">
+<td>396</td>
+<td>1</td>
+<td>0.98</td>
+<td>2.02E-02</td>
+<td>Yes</td>
+</tr>
+<tr class="odd">
+<td>399</td>
+<td>1</td>
+<td>0.999</td>
+<td>3.25E-06</td>
+<td>Yes</td>
+</tr>
+<tr class="even">
+<td>402</td>
+<td>2</td>
+<td>0.045</td>
+<td>9.55E-01</td>
+<td>No</td>
+</tr>
+<tr class="odd">
+<td>442</td>
+<td>2</td>
+<td>0.012</td>
+<td>9.88E-01</td>
+<td>No</td>
+</tr>
+<tr class="even">
+<td>443</td>
+<td>2</td>
+<td>0.01</td>
+<td>9.90E-01</td>
+<td>No</td>
+</tr>
+<tr class="odd">
+<td>444</td>
+<td>2</td>
+<td>0.011</td>
+<td>9.89E-01</td>
+<td>No</td>
+</tr>
+</tbody>
+</table>
+<p>The dependent mixture model managed to allocate and hence identify 7 faults out of 14 and although there were a few units for which the posterior probabilities were not really close to 0 and 1, the hidden Markov model did not succeed in performing better than model-based clustering.</p>
+</div>
+<div id="dimension-reduction" class="section level2">
+<h2>Dimension reduction</h2>
+<p>On the basis of the results achieved so far, we decided to reduce the dimensionality of the data, as indicated in the third aim of the project, by selecting only a particular subset of the original variables; irrelevant variables are in fact often the cause of a non-clear separation of the data points.</p>
+<p>Several approaches and techniques were hence performed: by prototypic variables, by principal components, by applying the variable selection algorithm for model-based clustering and finally by biclustering.</p>
+<div id="prototypic-variables" class="section level3">
+<h3>Prototypic variables</h3>
+<p>We had already noticed from exploratory analysis that certain groups of variables were highly correlated. We evaluated the linear correlation between the variables within each group, and the decision was to remove a variable if it had a linear correlation larger than 0.6 with another variable belonging to the same group, under the assumption that correlated variables gave redundant information.</p>
+<p>The 14 dropped variables were PH.P, PH.D, DBO.P, DBO.D, RD.DBO.G, DQO.D, RD.DQO.G, SS.P, SSV.P, SSV.D, SED.P, COND.P, COND.D and COND.S. The cluster analysis performed before was carried out again in this new dataset of 24 variables.</p>
+<p>Again, with hierarchical clustering, all the linkages except Ward’s method did not give rise to a “real” partition, because they returned a huge cluster with all the units but two, which again formed two singletons corresponding to malfunctioning days 11 and 149. Even k-means algorithm for different k values, Gaussian and skew-normal model-based clustering and modal clustering were applied to the data, but the results almost did not change.
+The quality of the new partitions was evaluated using the average silhouette width, which changed only slightly for all the methods: for hierarchical and k-means clustering it decreased from 0.09 to 0.07 and from 0.1 to 0.09 and for Gaussian and skew-normal mixtures it increased from 0.24 to 0.25 and from 0.22 to 0.23.
+Adjusted Rand indexes were then computed, but the results were again all approximately 0. As before, the only much higher result occurred when comparing the model-based clustering partitions for Gaussian and skew-normal components (ARI=0.823).</p>
+<p>Even if the correlated variables provided some redundant information, they did not mask the eventual patterns present in the data. We therefore tried another way to reduce dimensionality.</p>
+</div>
+<div id="principal-components-1" class="section level3">
+<h3>Principal Components</h3>
+<p>This time the selection of variables was performed by using principal components, i.e., linear combinations of the original variables explaining large portions of the variation present in the data. Instead of applying a principal component analysis to the whole dataset, with the risk of losing important variables that might give a good separation, it was decided to perform a PCA to all groups of correlated variables that expressed the same quantity at different stages of the plant. The table below shows the variables that compose each group, the number of principal components retained for each set of variables and the percentage of variability explained by them.</p>
+<table>
+<thead>
+<tr class="header">
+<th>Groups of variables</th>
+<th>No. of PC</th>
+<th>% of explained variability</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>PH.E, PH.P, PH.D, PH.S</td>
+<td>1</td>
+<td>≈ 78%</td>
+</tr>
+<tr class="even">
+<td>DBO.E, DBO.P, DBO.D, DBO.S, RD.DBO.P, RD.DBO.S, RD.DBO.G</td>
+<td>3</td>
+<td>≈ 93%</td>
+</tr>
+<tr class="odd">
+<td>DQO.E, DQO.D, DQO.S, RD.DQO.S, RD.DQO.G</td>
+<td>2</td>
+<td>≈ 89%</td>
+</tr>
+<tr class="even">
+<td>SS.E, SS.P, SS.D, SS.S, RD.SS.P, RD.SS.G</td>
+<td>2</td>
+<td>≈ 75%</td>
+</tr>
+<tr class="odd">
+<td>SSV.E, SSV.P, SSV.D, SSV.S</td>
+<td>2</td>
+<td>≈ 77%</td>
+</tr>
+<tr class="even">
+<td>SED.E, SED.P, SED.D, SED.S, RD.SED.P, RD.SED.G</td>
+<td>3</td>
+<td>≈ 95%</td>
+</tr>
+<tr class="odd">
+<td>COND.E, COND.P, COND.D, COND.S</td>
+<td>1</td>
+<td>≈ 95%</td>
+</tr>
+</tbody>
+</table>
+<p>The choice of how many principal components to retain was a trade-off between the rule of the percentage of explained variance, Kaiser Rule and a look at the scree plots. The last two scree plots were particular and somehow different from the others. While in the others the curve
+progressively decayed, in the second-last graph there was a sharp decline only after the third principal component, while in the last one, a single principal component manages to explain a very high variation of the data and the other 3 are of no importance.</p>
+<center>
+<img style="width: 800px;" src="Figures/scree.png">
+</center>
+<p><br></p>
+<p>We had already noticed in the exploratory analysis that variables measuring the conductivity at different stages of the plants presented the highest correlations (all correlations were &gt; 0.9) suggesting that the information provided by the other variables was redundant. The entire cluster analysis was performed on this new dataset of 16 variables (the 14 retained principal components
+plus the variables Q.E and ZN.E).</p>
+<p>With hierarchical clustering, no signs of improvements seemed to be present. Again, for all linkages, except Ward’s, we obtained a huge cluster which included all the observations but two singletons, which were again the same two faults. For complete linkage it was almost the same because the second and third cluster had respectively size 2 and 4. So again, Ward’s method was the only one that created a real partition and the cluster sizes were respectively 241, 139 and 147. However, this partition did not provide a satisfactory separation, as highlighted by the average silhouette width of 0.08.</p>
+<p>Neither applying k-means clustering for k=3 led to separated groups.</p>
+<p>Even with model-based clustering no great differences emerged. According to the BIC criterion, the best model had 2 components, but it was VVV (ellipsoidal, varying volume, shape and orientation).</p>
+<p>The table below shows all the characteristics of the optimal model with Gaussian mixtures; although the BIC had a very large decrease (from 24437.61 to 18781.78) the clustering results did not change.</p>
+<table>
+<thead>
+<tr class="header">
+<th>Optimal model</th>
+<th></th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>No. of components</td>
+<td>2</td>
+</tr>
+<tr class="even">
+<td>Distribution</td>
+<td>Ellipsoidal</td>
+</tr>
+<tr class="odd">
+<td>Volume</td>
+<td>Variable</td>
+</tr>
+<tr class="even">
+<td>Shape</td>
+<td>Variable</td>
+</tr>
+<tr class="odd">
+<td>Orientation</td>
+<td>Variable</td>
+</tr>
+<tr class="even">
+<td>Log likelihood</td>
+<td>-7357.18</td>
+</tr>
+<tr class="odd">
+<td>BIC</td>
+<td>18781.78</td>
+</tr>
+<tr class="even">
+<td>Cluster sizes</td>
+<td>433 94</td>
+</tr>
+<tr class="odd">
+<td>Mixing proportions</td>
+<td>0.82 0.18</td>
+</tr>
+</tbody>
+</table>
+<p>Also model-based clustering with mixtures of skew-normal was performed but the results did not differ from the previous ones. With modal clustering 21 levels were detected and the dendrogram was cut at level 4 in order to get 3 clusters, two of which were
+again the singletons of faulty observations 11 and 149.</p>
+<p>Silhouette values were computed again, but the values generally increased only a little. All optimal partitions were successively compared using the adjusted Rand indexes, but the values were all again almost 0, except when comparing the partitions with Gaussian and skew-normal mixtures (ARI=0.823).</p>
+</div>
+<div id="variable-selection-for-model-based-clustering" class="section level3">
+<h3>Variable selection for model-based clustering</h3>
+<p>Raftery and Dean’s Variable Selection Algorithm for Model-Based Clustering was applied to identify the most relevant variables.
+We applied the sequential forward greedy search algorithm to the partition of model-based clustering to find the most relevant variables, allowing the number G of groups to range from 2 to 5.</p>
+<p>The optimal model had 5 components and the three selected variables (SED.S, RD.SED.G and PH.D) measured only <strong>sediments</strong> and <strong>pH</strong>. This meant that, according to the algorithm, only those quantities were considered important and perhaps involved in fault detection.
+A Gaussian mixture model was fitted as usual using the EM algorithm and allowing the groups to vary again from 2 to 5. The best model in terms of BIC had 5 components and the 5 clusters sizes were respectively 263, 69, 39, 78 and 78. The average silhouette width was 0.14, enforcing the general idea of a random allocation of units into clusters.</p>
+</div>
+</div>
+<div id="biclustering-1" class="section level2">
+<h2>Biclustering</h2>
+<p>We then resorted to a more flexible clustering framework and biclustering was applied to the data using the R package biclust and the corresponding function biclust, with parameters delta=1.0 and alpha=1.5.</p>
+<p>When Cheng and Church’s algorithm was computed in the imputed dataset with transformed and standardized variables, no bicluster was found: only one bicluster of 527 rows and 38 columns (the dimensions of the data matrix) was in fact detected and no selection had been made. Also different algorithms (Plaid method and spectral algorithm) did not manage to find any bicluster. This is likely due to the fact that there was effectively no bicluster in the data. However, one could argue that the transformations applied to all variables made points more homogeneous and then less separable and that scaling, by making all variances equal to 1, made it impossible for biclustering, which actually worked on variances, to find differences.</p>
+<p>For this reason we also carried out bicluster analysis on the imputed dataset of the original non-transformed and non-standardized variables, but the result was again a single bicluster including all observations. Instead of imputing missing values, we simply dropped the observations having missing values out of the analysis and biclustering techniques were applied on the dataset of complete observations, even if this led to the removal of 8 malfunctioning days out of 14.</p>
+<p>In that case, 9 biclusters were found by Cheng and Church’s algorithm. Apart from that method, however, the other two mentioned above found again no bicluster (in particular, for Plaid method, it was not possible to find clusters for the columns). The table below shows the cluster sizes of the biclusters found by Cheng and Church’s algorithm.</p>
+<table>
+<thead>
+<tr class="header">
+<th></th>
+<th>BC 1</th>
+<th>BC 2</th>
+<th>BC 3</th>
+<th>BC 4</th>
+<th>BC 5</th>
+<th>BC 6</th>
+<th>BC 7</th>
+<th>BC 8</th>
+<th>BC 9</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>No. of rows</td>
+<td>64</td>
+<td>63</td>
+<td>49</td>
+<td>71</td>
+<td>42</td>
+<td>60</td>
+<td>16</td>
+<td>9</td>
+<td>5</td>
+</tr>
+<tr class="even">
+<td>No. of columns</td>
+<td>11</td>
+<td>10</td>
+<td>10</td>
+<td>10</td>
+<td>10</td>
+<td>10</td>
+<td>8</td>
+<td>7</td>
+<td>7</td>
+</tr>
+</tbody>
+</table>
+<p>When carrying out a more in depth analysis, we discovered not only that some of the rows repeated for different biclusters, but also that all biclusters shared some columns, as it is easy to see from the bicluster membership graph.</p>
+<center>
+<img style="width: 800px;" src="Figures/bicluster.png">
+</center>
+<p><br></p>
+<p>The six variables selected by the totality of biclusters were PH.E, PH.P, PH.D, PH.S, SED.D and SED.S, which measured the amount of two quantities only, pH and sediments, at different stages of the plant. According to bicluster analysis, these substances are, among all, the ones playing the most important role in separating points and hence an unusual variation in the amount of these quantities can be the cause of the faults in the plant.</p>
+<p>A further step was evaluating whether the found biclusters were constant and/or coherent: the lower the value returned the more constant or coherent a bicluster is. A value equal to 0 denotes the ideal situation of a perfectly constant or coherent bicluster, while a value above 1-1.5 is considered sufficiently high to determine that the bicluster is not constant or coherent.</p>
+<p>From the table below it is clear that variances on the rows are much lower than those in the columns and in particular only bicluster 8 narrowly falls in the category of constant biclusters on the rows.</p>
+<table>
+<thead>
+<tr class="header">
+<th></th>
+<th>BC 1</th>
+<th>BC 2</th>
+<th>BC 3</th>
+<th>BC 4</th>
+<th>BC 5</th>
+<th>BC 6</th>
+<th>BC 7</th>
+<th>BC 8</th>
+<th>BC 9</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Rows</td>
+<td>2.385</td>
+<td>2.057</td>
+<td>2.014</td>
+<td>2.188</td>
+<td>2.027</td>
+<td>2.188</td>
+<td>1.567</td>
+<td>0.647</td>
+<td>1.803</td>
+</tr>
+<tr class="even">
+<td>Columns</td>
+<td>130.307</td>
+<td>88.131</td>
+<td>77.814</td>
+<td>93.596</td>
+<td>72.242</td>
+<td>86.515</td>
+<td>53.126</td>
+<td>44.806</td>
+<td>4.358</td>
+</tr>
+<tr class="odd">
+<td>Both</td>
+<td>21.147</td>
+<td>13.848</td>
+<td>14.862</td>
+<td>13.465</td>
+<td>15.53</td>
+<td>14.227</td>
+<td>18.753</td>
+<td>19.966</td>
+<td>3.293</td>
+</tr>
+</tbody>
+</table>
+<p>In order to evaluate coherence, different types of variances were computed (additive, multiplicative and sign) on both rows and columns and the results are presented in Table 3.19.</p>
+<table>
+<thead>
+<tr class="header">
+<th></th>
+<th>BC 1</th>
+<th>BC 2</th>
+<th>BC 3</th>
+<th>BC 4</th>
+<th>BC 5</th>
+<th>BC 6</th>
+<th>BC 7</th>
+<th>BC 8</th>
+<th>BC 9</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Additive</td>
+<td>3.594</td>
+<td>2.987</td>
+<td>2.988</td>
+<td>3.297</td>
+<td>3.015</td>
+<td>3.192</td>
+<td>2.111</td>
+<td>0.823</td>
+<td>1.979</td>
+</tr>
+<tr class="even">
+<td>Multiplicative</td>
+<td>Inf</td>
+<td>Inf</td>
+<td>Inf</td>
+<td>Inf</td>
+<td>Inf</td>
+<td>Inf</td>
+<td>Inf</td>
+<td>Inf</td>
+<td>Inf</td>
+</tr>
+<tr class="odd">
+<td>Sign</td>
+<td>0.973</td>
+<td>0.86</td>
+<td>0.725</td>
+<td>0.961</td>
+<td>0.895</td>
+<td>0.939</td>
+<td>1.167</td>
+<td>1.119</td>
+<td>0.911</td>
+</tr>
+</tbody>
+</table>
+<p>While multiplicative variances took infinite values for all biclusters, additive and sign variances had smaller values. Specifically, all biclusters were sign variance coherent because all values were less than 1.5, while they were not additive variance coherent.
+With this in mind, we cannot say that biclustering did a very good job because first, it was not possible to find any biclusters in the data we were usually working with (we had to use the original dataset, and only with complete observations), and secondly because the results above were not satisfactory, also because 9 seemed to be a number of clusters too high and pretty different from the results we obtained with all other methods.</p>
+</div>
+</div>
+<div id="conclusions" class="section level1">
+<h1>Conclusions</h1>
+<p>The problem of classifying the units of this dataset, that represented the different days of the year for which several variables had been measured in order to detect the occurrence of faults in a wastewater treatment plant, was a difficult issue. By applying clustering methods only, and without external information, we did not succeed in identifying all the malfunctioning days.</p>
+<p>Only a portion of them was always detected by most of the algorithms, probably because they were the most outlying ones with respect to the majority of the units; this in turn means that, in general, faults show features that are very similar to the ones of operational days. This might partly be an effect of missing data imputation that might have damped the variability inherent in the data, thus making the clustering problem even harder to solve.</p>
+<p>By analysing the performances of the clustering methods, the overall impression was that it seemed difficult for the algorithms to find a stable group structure that could clearly separate the observations into operational and malfunctioning days.</p>
+<p>The traditional clustering techniques of hierarchical and k-means clustering did not manage to identify this configuration and when it came to produce groups, the result was the creation of partitions, which were just induced by the clustering algorithm, and that had nothing to do with the real division into operational and malfunctioning days or to any other stable clustering structure in the data. This idea was also confirmed by the very low value measuring the agreement between the two partitions.</p>
+<p>With model-based clustering more stable configurations were obtained and the difference between Gaussian and skew-normal components was very small, due to the fact that the skew-mixtures had very low values of asymmetry.</p>
+<p>The variables with the greatest discriminant power in this context measured sediments, suspended solids, volatile suspended solids and biological and chemical oxygen demand. This was coherent not only with the results obtained with other methods (for example, biclustering and variable selection algorithm) that pointed as relevant those variables as well, but also with the Linneo+ classification, given that 6 faults out of 14 were due to problems concerning suspended solids.</p>
+<p>The overall performance of hierarchical modal clustering resembled the one of single linkage and one of the reasons why it did not achieve good results might be the high-dimensionality of the data.
+Also taking into account the dependence between the observations did not seem to improve the quality of clustering in terms of cluster characteristics and capacity of detecting the faults. One should not ignore, however, that this might be partly due to the fact that not all the information present in the dataset had been used.</p>
+<p>No dimension reduction technique led to better clustering results, emphasizing the absence of variables that could prevent the group structure from emerging.</p>
+<p>The final variables identified by the knowledge-based system Linneo+ as the most influential measured suspended solids and the biological and chemical oxygen demand. Our clustering algorithms succeeded in putting these quantities in the list of possible indicators of faulty
+performance of the plant, also without previous knowledge about the problem of interest. Despite this positive agreement, none of the clustering methods managed to identify all the faults.</p>
+<p>This dataset has in fact been classified as an “ill-structured domain”, meaning that a well-defined group structure does not exist and that the problem itself does not yield a certain answer because there is actually no obvious right answer.</p>
+<p>This is indeed typical of real world problems, where the data are conflicting and no unique solution is present: one can propose different solutions, each with particular strength and weaknesses.</p>
+<p>In these situations data clustering and conceptual clustering must be used together and support one another. External information and expertise of context specific knowledge are therefore essential and indispensable. Heuristics are indeed of crucial importance, because solving several problems in a similar context and with similar goals helps finding the best solution to the problem.</p>
+<div id="further-work" class="section level2">
+<h2>Further work</h2>
+<p>In view of what discussed above, we have identified at least three possible lines of future research which touch both empirical and methodological issues.</p>
+<p>On the data side, a better understanding of the missing data generation process is required. The missing data do not seem to be missing at random and this might call for ad hoc imputation strategies, able to preserve data variability as much as possible.</p>
+<p>Besides having better data, the detection of faults might largely benefit from including in the analysis external covariates, for example climatic variables, whose effect on the functioning of a wastewater treatment is well documented in the literature, or other characteristics of the plant that might emerge from a more in depth analysis of the plant characteristics in faulty days.</p>
+<p>From a methodological point of view, we must recognize that the potentialities of Hidden Markov Models have not been completely exploited because of the limitations of the algorithm implemented in depmixS4, which was created in a way such that it achieved the best results only in the univariate or, at most, bivariate case.</p>
+<p>We applied a bivariate Hidden Markov Model to the data; the two variables that we chose were the first two principal components, which, however, explained only a small portion of the data variability. A further analysis could thus include working on the algorithm in order to fit a more complex model on a larger subset of the variables, for example, the ones recognized as most relevant in our analysis. In this way it would be possible to take into account in a more accurate way the dependence between the units of the dataset and hence achieve better results.</p>
+</div>
+</div>
