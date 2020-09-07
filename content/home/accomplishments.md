@@ -105,8 +105,61 @@ date_format = "Jan 2006"
   date_start = "2020-07-12"
   date_end = ""
   description = "Use SQL commands to filter, sort, and summarize data. Use the UNION operator. Manipulate strings, dates, & numeric data."
-
   
+[[item]]
+  organization = "Datacamp"
+  organization_url = "https://www.datacamp.com/"
+  title = "Introduction to Power BI"
+  url = "https://www.datacamp.com/courses/introduction-to-power-bi"
+  certificate_url = "https://www.datacamp.com/statement-of-accomplishment/course/c336166f26db973289f7ed3b5dec1d11055bee97"
+  date_start = "2020-09-06"
+  date_end = ""
+  description = "Load and transform data using Power Query, creating visualizations, making reports fully interactive,  using DAX formulas to create customized calculated columns and fields."
+  
+[[item]]
+  organization = "Datacamp"
+  organization_url = "https://www.datacamp.com/"
+  title = "Introduction to SQL"
+  url = "https://www.datacamp.com/courses/introduction-to-sql"
+  certificate_url = "https://www.datacamp.com/statement-of-accomplishment/course/4c47dfecfd4dbb69da1506f77a46dfc956e78043"
+  date_start = "2020-09-05"
+  date_end = ""
+  description = "Selecting columns, filtering rows, aggregate functions, sorting and grouping."
+
+
+[[item]]
+  organization = "Datacamp"
+  organization_url = "https://www.datacamp.com/"
+  title = "Introduction to Deep Learning in Python"
+  url = "https://www.datacamp.com/courses/introduction-to-deep-learning-in-python"
+  certificate_url = "https://www.datacamp.com/statement-of-accomplishment/course/cb5bb6d58fc2ceac4bf9e26488ffa5aaa50a3bb3"
+  date_start = "2020-09-04"
+  date_end = ""
+  description = "Deep Learning and neural networks, optimizing a neural network with backpropagation, building deep learning models with keras, fine-tuning keras models."
+  
+
+[[item]]
+  organization = "Datacamp"
+  organization_url = "https://www.datacamp.com/"
+  title = "Supervised Learning with scikit-learn"
+  url = "https://www.datacamp.com/courses/supervised-learning-with-scikit-learn"
+  certificate_url = "https://www.datacamp.com/statement-of-accomplishment/course/51b80a469050e713609ce36af587ee25d9082f16"
+  date_start = "2020-09-03"
+  date_end = ""
+  description = "Classification, regression, fine-tuning models, preprocessing and pipelines."
+  
+
+[[item]]
+  organization = "Datacamp"
+  organization_url = "https://www.datacamp.com/"
+  title = "Python for R users"
+  url = "https://www.datacamp.com/courses/python-for-r-users"
+  certificate_url = "https://www.datacamp.com/statement-of-accomplishment/course/89255e2446318ca317a05eb8ad6bf6c2c207f96c"
+  date_start = "2020-09-01"
+  date_end = ""
+  description = "Control flows, loops, functions, Pandas, plotting."
+
+
 [[item]]
   organization = "LinkedIn Learning"
   organization_url = "http://www.linkedin.com/learning"

@@ -24,7 +24,14 @@ date_format = "Jan 2006"
   location = "Bologna"
   date_start = "2019-10-01"
   date_end = ""
-  description = """ Development of advanced parsimonious latent variable models for the analysis of graduates’ satisfaction. """
+  description = """ * Development of advanced statistical models 
+  * Model implementation in statistical software 
+  * Data analysis (pre-processing, exploratory analysis, modelling) 
+  * Creation of automatic reports 
+  * Preparation of interactive dashboards 
+  * Communication of insights 
+  * Public speaking at international conferences 
+  * Writing of scientific papers """
 
 [[experience]]
   title = "Teaching Assistant"

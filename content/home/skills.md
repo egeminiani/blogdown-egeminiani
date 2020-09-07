@@ -18,7 +18,7 @@ subtitle = ""
   icon = "chart-bar"
   icon_pack = "fas"
   name = "Data Science & Programming"
-  description = "R (9 years), Python (< 1 year) <br> SPSS (< 1 year), SAS (1 year) <br> SAS Enterprise Miner (1 year)"
+  description = "R (9 years), Python (1 year) <br> SPSS (< 1 year), SAS (1 year) <br> SAS Enterprise Miner (1 year)"
   
 [[feature]]
   icon = "database"
@@ -42,7 +42,7 @@ subtitle = ""
   icon = "palette"
   icon_pack = "fas"
   name = "Visualization"
-  description = "R (9 years) <br> Tableau (< 1 year)"
+  description = "R (9 years) <br> Tableau (< 1 year) <br> Power BI (< 1 year)"
 
 [[feature]]
   icon = "undo"
