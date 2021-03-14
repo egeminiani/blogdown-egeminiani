@@ -5,7 +5,7 @@ headless = true  # This file represents a page section.
 active = true  # Activate this widget? true/false
 weight = 45  # Order that this section will appear.
 
-title = "International experiences"
+title = "International research experience"
 subtitle = ""
 
 # Date format for experience

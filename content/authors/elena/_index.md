@@ -1,7 +1,7 @@
 ---
 authors:
 - elena
-bio: I'm a postdoctoral researcher in Statistics who loves programming.
+bio: I'm a business analytics and data science professional, and a former statistics  researcher.
 education:
   courses:
   - course: PhD in Statistics
@@ -15,20 +15,19 @@ education:
     year: 2014
 email: ""
 interests:
-- Data Analysis
-- Machine Learning
+- Statistical Modelling
 - Data Science
+- Machine Learning
+- Programming
 - Text Analysis
 - Data Visualization
-- Optimization
 - Dimension Reduction
-- Programming
 
 name: Elena Geminiani
 organizations:
-- name: University of Bologna
-  url: "https://www.unibo.it/en/homepage"
-role: Postdoc in Statistics & Teaching Assistant
+- name: ICONSULTING
+  url: "https://www.iconsulting.biz/"
+role: Business Analytics & <br> Data Science
 social:
 - icon: envelope
   icon_pack: fas
@@ -39,6 +38,9 @@ social:
 - icon: orcid
   icon_pack: ai
   link: http://orcid.org/0000-0001-5992-9728
+- icon: google-scholar
+  icon_pack: ai
+  link: https://scholar.google.com/citations?user=gCcjt_QAAAAJ&hl=en
 - icon: linkedin-in
   icon_pack: fab
   link: https://www.linkedin.com/in/elenageminiani/
@@ -46,4 +48,5 @@ superuser: true
 title: Elena Geminiani
 ---
 
-<br> <div style="text-align: justify"> Hello! I am a postdoc in Statistics at the University of Bologna. I am enthusiastic about doing anything at the intersection between statistical methodology and computational science. My research interests include multivariate analysis, dimension reduction, text analysis, and optimization. I have spent research periods abroad at the London School of Economics, University College London, KU Leuven, and University of Glasgow (double BSc degree). I am a teaching tutor in three undergraduate and postgraduate courses. </div>
+<br> <div style="text-align: justify"> Hello! I am a business analytics and data science professional at ICONSULTING. I am a Statistics PhD, and a former researcher in statistics and psychometrics, with experience at several universities including London School of Economics, University College London, KU Leuven, and University of Glasgow. I am enthusiastic about anything at the intersection between statistics and computational science, particularly predictive modelling, multivariate and latent variable models, and dimension reduction.  </div>
+

@@ -18,55 +18,55 @@ subtitle = ""
   icon = "chart-bar"
   icon_pack = "fas"
   name = "Data Science & Programming"
-  description = "R (9 years), Python (1 year) <br> SPSS (< 1 year), SAS (1 year) <br> SAS Enterprise Miner (1 year)"
+  description = "R, Python, SPSS, <br> SAS, SQL, Git"
   
-[[feature]]
-  icon = "database"
-  icon_pack = "fas"
-  name = "Databases"
-  description = "SQL (< 1 year) <br> MongoDB (< 1 year)"
+# [[feature]]
+#   icon = "database"
+#   icon_pack = "fas"
+#   name = "Databases"
+#   description = "SQL"
   
-[[feature]]
-  icon = "tools"
-  icon_pack = "fas"
-  name = "Big Data"
-  description = "Spark (< 1 year) <br> KNIME (< 1 year) <br> Hadoop (< 1 year)"
+# [[feature]]
+#   icon = "tools"
+#   icon_pack = "fas"
+#   name = "Big Data"
+#   description = "Spark (< 1 year) <br> KNIME (< 1 year) <br> Hadoop (< 1 year)"
   
 [[feature]]
   icon = "pencil-alt"
   icon_pack = "fas"
-  name = "Reporting"
-  description = "R Markdown (4 years) <br> LaTeX (6 years), beamer (6 years) <br> Microsoft Office (10 years)"  
+  name = "Reporting & <br> Visualization"
+  description = "R Markdown, Power BI, <br> LaTeX, beamer"  
   
-[[feature]]
-  icon = "palette"
-  icon_pack = "fas"
-  name = "Visualization"
-  description = "R (9 years) <br> Tableau (< 1 year) <br> Power BI (< 1 year)"
+# [[feature]]
+#   icon = "palette"
+#   icon_pack = "fas"
+#   name = "Visualization"
+#   description = "R, Power BI"
 
-[[feature]]
-  icon = "undo"
-  icon_pack = "fas"
-  name = "Version Control"
-  description = "Git (1 year) <br> Github (1 year)"
+# [[feature]]
+#   icon = "undo"
+#   icon_pack = "fas"
+#   name = "Version Control"
+#   description = "Git (1 year) <br> Github (1 year)"
 
-[[feature]]
-  icon = "desktop"
-  icon_pack = "fas"
-  name = "Web Apps"
-  description = "R Shiny (2 years)"
+# [[feature]]
+#   icon = "desktop"
+#   icon_pack = "fas"
+#   name = "Web Apps"
+#   description = "R Shiny (2 years)"
 
-[[feature]]
-  icon = "sitemap"
-  icon_pack = "fas"
-  name = "Websites"
-  description = "blogdown (< 1 year) <br> Hugo (< 1 year)"
+# [[feature]]
+#   icon = "sitemap"
+#   icon_pack = "fas"
+#   name = "Websites"
+#   description = "blogdown (< 1 year) <br> Hugo (< 1 year)"
   
 [[feature]]
   icon = "mountain"
   icon_pack = "fa"
   name = "Soft Skills"
-  description = "Problem Solving, Independence <br> Fast learning, Adaptability <br> Self-motivation, Commitment <br> Time Management <br> Public Speaking, Technical Writing"
+  description = "Innovation, Fast learning, <br> Adaptability, Commitment, <br> Public Speaking, Technical Writing"
   
 # tidyverse  
 

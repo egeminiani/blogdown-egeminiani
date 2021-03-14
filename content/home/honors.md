@@ -26,7 +26,7 @@ date_format = "Jan 2006"
   url = ""
   certificate_url = ""
   date_start = "2019-10-01"
-  date_end = ""
+  date_end = "2020-09-30"
   description = "One-year fellowship funded by GRADUA (_GRaduates Advancement and Development of University capacities in Albania_)."
   
 
